@@ -1,0 +1,26 @@
+{
+	"name": "vscode-quakec",
+	"description": "QuakeC language server.",
+	"version": "0.0.1",
+	"author": "Joshua Skelton",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/joshuaskelly/vscode-quakec"
+	},
+	"devDependencies": {
+		"@types/node": "^6.0.96"
+	},
+	"dependencies": {
+		"quakec-parser": "file:../parser",
+		"vscode-languageserver": "^3.4.2"
+	},
+	"scripts": {
+		"installServer": "installServerIntoExtension ../client ./package.json ./tsconfig.json",
+		"compile": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -p .",
+		"watch": "installServerIntoExtension ../client ./package.json ./tsconfig.json && tsc -w -p ."
+	}
+}

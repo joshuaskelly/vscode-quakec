@@ -1,0 +1,24 @@
+{
+  "name": "quakec-parser",
+  "version": "0.0.1",
+  "description": "A parser for QuakeC",
+  "author": "Joshua Skelton",
+  "license": "MIT",
+  "main": "quakec-parser.js",
+  "repository": {
+		"type": "git",
+		"url": "https://github.com/JoshuaSkelly/vscode-quakec"
+	},
+  "devDependencies": {
+    "@types/mocha": "^2.2.46",
+    "@types/node": "^9.3.0",
+    "gulp": "^3.9.1",
+    "mocha": "^4.1.0"
+  },
+  "dependencies": {
+    "lex": "^1.7.9"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
