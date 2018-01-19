@@ -114,6 +114,10 @@ var parse = function(programInfo) {
         token.arity = a;
         token.range = t.range;
 
+        if (!token.scope) {
+            token.scope = scope;
+        }
+
         symbols.push(token);
 
         return token;
