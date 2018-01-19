@@ -31,8 +31,6 @@ connection.onInitialize((params): InitializeResult => {
 	workspaceRoot = params.rootPath;
 	documentManager = new SourceDocumentManager(workspaceRoot);
 	
-	processWorkspace();
-
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
@@ -42,6 +40,7 @@ connection.onInitialize((params): InitializeResult => {
 });
 
 documents.onDidChangeContent((change) => {
+	documentManager.updateDocument(change.document);
 	buildAstCache();
 });
 
@@ -55,23 +54,11 @@ interface QuakeCSettings {
 
 let maxNumberOfProblems: number;
 
-let documentCache:{[uri: string]: TextDocument} = {};
 let astCache:{[uri: string]: Program} = {};
-
-function processWorkspace(): void {
-	let files = fs.readdirSync(workspaceRoot);
-	files.forEach(function(file) {
-		let uri = path.join(workspaceRoot, file);
-		let content:string = fs.readFileSync(uri, "utf8");
-
-		let d: TextDocument = TextDocument.create(uri, "quakec", 0, content);
-		documentCache["file://" + uri] = d;
-	});
-}
 
 function buildAstCache(): void {
 	let progs = "file://" + path.join(workspaceRoot, "progs.src");
-	let progDoc = documentCache[progs];
+	let progDoc = documentManager.getDocument(progs);
 
 	if (progDoc) {
 		let text = progDoc.getText();
@@ -83,7 +70,7 @@ function buildAstCache(): void {
 		fileOrder.forEach(function(file) {
 			if (file) {
 				let uri = "file://" + path.join(workspaceRoot, file);
-				let doc = documentCache[uri];
+				let doc = documentManager.getDocument(uri);
 
 				if (doc) {
 					let parseInfo: ParseInfo = {
