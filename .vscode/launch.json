@@ -27,6 +27,15 @@
 				"${workspaceRoot}/client/server/**/*.js"
 			],
 			"preLaunchTask": "watch:server"
-		}
+		},
+		{
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+            "name": "Run Tests",
+            "stopOnEntry": false,
+            "args": ["${workspaceRoot}/*/test/**/*.js", "--no-timeouts"],
+            "cwd": "${workspaceRoot}"
+        }
 	]
 }
