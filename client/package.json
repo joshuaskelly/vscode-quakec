@@ -29,6 +29,7 @@
 					"QuakeC",
 					"qcc"
 				],
+				"configuration": "./language-configuration.json",
 				"extensions": [
 					".qc"
 				]
