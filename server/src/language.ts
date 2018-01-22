@@ -118,7 +118,7 @@ export class SourceDocumentManager {
         if (osType === "Windows_NT") {
             uri = uri.replace("%3A", ":");
         }
-        else if (osType === "Darwin") {
+        else {
             uri = path.posix.sep + uri;
         }
 
@@ -127,6 +127,11 @@ export class SourceDocumentManager {
 
     private toVSCodeUri(uri: string): string {
         uri = uri.replace(/\\/g, path.posix.sep);
+        let osType = os.type();
+
+        if (osType === "Windows_NT") {
+            return "file:" + path.posix.sep + uri;
+        }
 
         return "file:" + path.posix.sep + path.posix.sep + uri;
     }
