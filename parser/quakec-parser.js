@@ -875,6 +875,21 @@ Program.prototype.getDefinition = function(position) {
 
     let definition = scope.find(reference.value);
 
+    if (!definition.scope) {
+        // Handle vector component accessors
+        let vectorComponent = reference.value.slice(-2);
+        if (["_x", "_y", "_z"].includes(vectorComponent)) {
+            let vectorDefinition = scope.find(reference.value.slice(0, -2));
+
+            if (vectorDefinition && vectorDefinition.type && (vectorDefinition.type.value === "vector" || vectorDefinition.type.value === ".vector")) {
+                definition = vectorDefinition;
+            }
+        }
+        else {
+            definition = null;
+        }
+    }
+
     if (definition) {
         return {
             uri: definition.scope.uri,
