@@ -19,6 +19,11 @@ import {
 } from "quakec-parser";
 import { relative } from "path";
 
+class DocumentCacheItem {
+    version: number;
+    document: TextDocument;
+};
+
 class ProgramCacheItem {
     uri: string;
     isValid: boolean;
@@ -28,7 +33,7 @@ class ProgramCacheItem {
 /* Class for working with source documents. */
 export class SourceDocumentManager {
     private workspaceRoot: string;
-    private documents: {[uri: string]: TextDocument};
+    private documents: {[uri: string]: DocumentCacheItem};
     private programs: {[uri: string]: ProgramCacheItem};
     private sourceOrder: string[];
 
@@ -49,7 +54,13 @@ export class SourceDocumentManager {
      * @param uri - Document uri
      */
     public getDocument(uri: string): TextDocument {
-        return this.documents[uri];
+        let documentCacheItem: DocumentCacheItem = this.documents[uri];
+
+        if (!documentCacheItem) {
+            return null;
+        };
+
+        return documentCacheItem.document;
     }
 
     /**
@@ -57,15 +68,20 @@ export class SourceDocumentManager {
      * @param document - Text document to update
      */
     public updateDocument(document: TextDocument) {
-        let d = this.getDocument(document.uri);
+        let documentCacheItem: DocumentCacheItem = this.documents[document.uri];
 
         // Update if not currently tracked or newer version
-        if (!d || d.version < document.version) {
-            this.documents[document.uri] = document;
+        if (!documentCacheItem || documentCacheItem.version < document.version) {
+            
+            documentCacheItem = {
+                version: document.version,
+                document: document
+            };
+            
+            this.documents[document.uri] = documentCacheItem;
+            this.invalidateProgram(document.uri);
+            this.validateProgramCache();
         }
-
-        this.invalidateAst(document.uri);
-        this.validateAstCache();
     }
 
     public getDefinition(request: TextDocumentPositionParams): Location {
@@ -79,7 +95,7 @@ export class SourceDocumentManager {
         }
 
         if (!programCacheItem.isValid) {
-            this.validateAst(uri);
+            this.validateProgram(uri);
         }
 
         let program: Program = programCacheItem.program;
@@ -106,11 +122,17 @@ export class SourceDocumentManager {
                 this.buildSourceOrder(document);
             }
         }
+
+        this.validateProgramCache();
     }
 
     private loadDocument(uri: string): TextDocument {
         let document = this.readDocument(uri);
-        this.documents["file://" + uri] = document;
+        let documentCacheItem = {
+            version: document.version,
+            document: document
+        };
+        this.documents["file://" + uri] = documentCacheItem;
 
         if (this.isSourceDocument(uri)) {
             let programCacheItem: ProgramCacheItem = {
@@ -150,14 +172,14 @@ export class SourceDocumentManager {
         return TextDocument.create(uri, langId, 1, content);
     }
 
-    private validateAstCache() {
+    private validateProgramCache() {
         if (this.sourceOrder) {
             let scope: Scope = null;
 
             for (let i = 0; i < this.sourceOrder.length; i++) {
                 let uri: string = this.sourceOrder[i];
                 
-                var program: Program = this.validateAst(uri, scope);
+                var program: Program = this.validateProgram(uri, scope);
 
                 if (program) {
                     scope = program.scope;
@@ -166,11 +188,11 @@ export class SourceDocumentManager {
         }
 
         for (let uri in this.programs) {
-            this.validateAst(uri);
+            this.validateProgram(uri);
         }
     };
 
-    private validateAst(uri: string, scope?: Scope): Program {
+    private validateProgram(uri: string, scope?: Scope): Program {
         let programCacheItem: ProgramCacheItem = this.programs[uri];
 
         if (!programCacheItem) {
@@ -198,13 +220,13 @@ export class SourceDocumentManager {
         return program;
     };
 
-    private invalidateAstCache(): void {
+    private invalidateProgramCache(): void {
         for (let uri in this.programs) {
-            this.invalidateAst(uri, false);
+            this.invalidateProgram(uri, false);
         }
     };
 
-    private invalidateAst(uri: string, invalidateDownstream = true): void {
+    private invalidateProgram(uri: string, invalidateDownstream = true): void {
         let programCacheItem: ProgramCacheItem = this.programs[uri];
         let program: Program = programCacheItem.program;
         
@@ -218,7 +240,7 @@ export class SourceDocumentManager {
         if (invalidateDownstream && this.sourceOrder.includes(uri)) {
             for (var i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {
                 let uri: string = this.sourceOrder[i];
-                this.invalidateAst(uri, false);
+                this.invalidateProgram(uri, false);
             }
         }
     }
@@ -239,120 +261,4 @@ export class SourceDocumentManager {
     private workspacePath(relativePath: string) {
         return path.join(this.workspaceRoot, relativePath);
     }
-}
-
-class AstCacheItem {
-    isValid: boolean;
-    ast: Program;
-    document: TextDocument;
-}
-
-class AstManager {
-    progsSrc: TextDocument;
-    sourceOrder: string[];
-    astCache: {[uri: string]: AstCacheItem};
-
-    constructor(progsSrc?: TextDocument) {
-        this.progsSrc = progsSrc;
-        this.sourceOrder = [];
-        this.astCache = {}
-
-        if (this.progsSrc) {
-            //this.buildSourceOrder();
-        }
-
-        //this.validateAstCache();
-    }
-
-    public addDocument(document: TextDocument): void {
-        let astCacheItem: AstCacheItem = {
-            isValid: false,
-            ast: null,
-            document: document
-        };
-
-        this.astCache[document.uri] = astCacheItem;
-    };
-
-    public addDocuments(documents: TextDocument[]): void {
-        for (let document of documents) {
-            this.addDocument(document);
-        }
-    }
-
-    public validateAstCache() {
-        if (this.progsSrc) {
-            let scope: Scope = null;
-
-            for (let i = 0; i < this.sourceOrder.length; i++) {
-                let uri: string = this.sourceOrder[i];
-                
-                var ast: Program = this.validateAst(uri, scope);
-
-                if (ast) {
-                    scope = ast.scope;
-                }
-            }
-        }
-
-        for (let uri in this.astCache) {
-            let ast: AstCacheItem = this.astCache[uri];
-            this.validateAst(uri);
-        }
-    };
-
-    private validateAst(uri: string, scope?: Scope): Program {
-        let astCacheItem: AstCacheItem = this.astCache[uri];
-
-        if (!astCacheItem) {
-            return null;
-        }
-
-        if (astCacheItem.isValid) {
-            return astCacheItem.ast;
-        }
-
-        let document: TextDocument = astCacheItem.document;
-        let parseInfo: ParseInfo = {
-            program: document.getText(),
-            uri: uri,
-            parentScope: scope
-        };
-        let ast: Program = parser.parse(parseInfo);
-        astCacheItem = {
-            isValid: true,
-            ast: ast,
-            document: document
-        };
-        this.astCache[uri] = astCacheItem;
-
-        return ast;
-    };
-
-    public invalidateAstCache(): void {
-        for (let uri in this.astCache) {
-            let ast: AstCacheItem = this.astCache[uri];
-            this.invalidateAst(uri, false);
-        }
-    };
-
-    public invalidateAst(uri: string, invalidateDownstream = true): void {
-        let astCacheItem: AstCacheItem = this.astCache[uri];
-
-        if (!astCacheItem) {
-            return;
-        }
-
-        astCacheItem.isValid = false;
-        this.astCache[uri] = astCacheItem;
-
-        if (invalidateDownstream && this.sourceOrder.includes(uri)) {
-            for (var i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {
-                let uri: string = this.sourceOrder[i];
-                this.invalidateAst(uri, false);
-            }
-        }
-    };
-
-    
 }
