@@ -40,8 +40,8 @@ connection.onInitialize((params): InitializeResult => {
 });
 
 documents.onDidChangeContent((change) => {
+	//documentManager = new SourceDocumentManager(workspaceRoot);
 	documentManager.updateDocument(change.document);
-	buildAstCache();
 });
 
 interface Settings {
@@ -54,56 +54,8 @@ interface QuakeCSettings {
 
 let maxNumberOfProblems: number;
 
-let astCache:{[uri: string]: Program} = {};
-
-function buildAstCache(): void {
-	let progs = "file://" + path.join(workspaceRoot, "progs.src");
-	let progDoc = documentManager.getDocument(progs);
-
-	if (progDoc) {
-		let text = progDoc.getText();
-		text = text.replace(/\/\/.*/g, "");
-		let fileOrder = text.split(/\s+/);
-		fileOrder.shift();
-		let scope:any = null;
-
-		fileOrder.forEach(function(file) {
-			if (file) {
-				let uri = "file://" + path.join(workspaceRoot, file);
-				let doc = documentManager.getDocument(uri);
-
-				if (doc) {
-					let parseInfo: ParseInfo = {
-						program: doc.getText(),
-						uri: uri,
-						parentScope: scope
-					};
-
-					let ast = parser.parse(parseInfo);
-
-					if (ast) {
-						astCache[uri] = ast;
-						scope = ast.scope;
-					}
-				}
-			}
-		});
-	}
-};
-
 connection.onDefinition((request:TextDocumentPositionParams):Location => {
-	let position: Position = request.position;
-	let uri: string = request.textDocument.uri;
-
-	let ast = astCache[uri];
-
-	if (!ast) {
-		return null;
-	}
-
-	let location:Location = ast.getDefinition(position);
-
-	return location;
+	return documentManager.getDefinition(request);
 });
 
 connection.listen();
