@@ -56,7 +56,7 @@ export class SourceDocumentManager {
      * @param uri - Document uri
      */
     public getDocument(uri: string): TextDocument {
-        let documentCacheItem: DocumentCacheItem = this.documents[uri];
+        let documentCacheItem: DocumentCacheItem = this.getDocumentCacheItem(uri);
 
         if (!documentCacheItem) {
             return null;
@@ -71,7 +71,7 @@ export class SourceDocumentManager {
      */
     public updateDocument(document: TextDocument) {
         let uri: string = this.fromVSCodeUri(document.uri);
-        let documentCacheItem: DocumentCacheItem = this.documents[uri];
+        let documentCacheItem: DocumentCacheItem = this.getDocumentCacheItem(uri);
 
         // Update if not currently tracked or newer version
         if (!documentCacheItem || documentCacheItem.version < document.version) {
@@ -81,7 +81,7 @@ export class SourceDocumentManager {
                 document: document
             };
             
-            this.documents[document.uri] = documentCacheItem;
+            this.setDocumentCacheItem(document.uri, documentCacheItem);
             this.invalidateProgram(document.uri);
             this.validateProgramCache();
         }
@@ -90,8 +90,7 @@ export class SourceDocumentManager {
     public getHover(request: TextDocumentPositionParams) : Hover {
         let position: Position = request.position;
         let uri: string = this.fromVSCodeUri(request.textDocument.uri);
-
-        let programCacheItem: ProgramCacheItem = this.programs[uri];
+        let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return null;
@@ -129,14 +128,14 @@ export class SourceDocumentManager {
     private toVSCodeUri(uri: string): string {
         uri = uri.replace(/\\/g, path.posix.sep);
 
-        return "file:" + path.posix.sep + uri;
+        return "file:" + path.posix.sep + path.posix.sep + uri;
     }
 
     public getDefinition(request: TextDocumentPositionParams): Location {
         let position: Position = request.position;
         let uri: string = this.fromVSCodeUri(request.textDocument.uri);
         
-        let programCacheItem: ProgramCacheItem = this.programs[uri];
+        let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return null;
@@ -182,7 +181,7 @@ export class SourceDocumentManager {
             version: document.version,
             document: document
         };
-        this.documents[uri] = documentCacheItem;
+        this.setDocumentCacheItem(uri, documentCacheItem);
 
         if (this.isSourceDocument(uri)) {
             let programCacheItem: ProgramCacheItem = {
@@ -191,7 +190,7 @@ export class SourceDocumentManager {
                 program: null
             };
 
-            this.programs[uri] = programCacheItem;
+            this.setProgramCacheItem(uri, programCacheItem);
         }
 
         return document;
@@ -241,7 +240,7 @@ export class SourceDocumentManager {
     };
 
     private validateProgram(uri: string, scope?: Scope): Program {
-        let programCacheItem: ProgramCacheItem = this.programs[uri];
+        let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return null;
@@ -263,7 +262,7 @@ export class SourceDocumentManager {
             isValid: true,
             program: program
         };
-        this.programs[uri] = programCacheItem;
+        this.setProgramCacheItem(uri, programCacheItem);
 
         return program;
     };
@@ -275,7 +274,7 @@ export class SourceDocumentManager {
     };
 
     private invalidateProgram(uri: string, invalidateDownstream = true): void {
-        let programCacheItem: ProgramCacheItem = this.programs[uri];
+        let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return;
@@ -288,7 +287,7 @@ export class SourceDocumentManager {
         }
 
         programCacheItem.isValid = false;
-        this.programs[uri] = programCacheItem;
+        this.setProgramCacheItem(uri, programCacheItem);
 
         if (invalidateDownstream && this.sourceOrder.includes(uri)) {
             for (var i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {
@@ -313,5 +312,21 @@ export class SourceDocumentManager {
 
     private workspacePath(relativePath: string) {
         return path.join(this.workspaceRoot, relativePath);
+    }
+
+    private getProgramCacheItem(uri: string): ProgramCacheItem {
+        return this.programs[uri.toLowerCase()];
+    }
+
+    private setProgramCacheItem(uri: string, cacheItem: ProgramCacheItem): void {
+        this.programs[uri.toLowerCase()] = cacheItem;
+    }
+
+    private getDocumentCacheItem(uri: string): DocumentCacheItem {
+        return this.documents[uri.toLowerCase()];
+    }
+
+    private setDocumentCacheItem(uri: string, cacheItem: DocumentCacheItem): void {
+        this.documents[uri.toLowerCase()] = cacheItem;
     }
 }
