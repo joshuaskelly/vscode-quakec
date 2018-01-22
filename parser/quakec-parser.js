@@ -589,8 +589,13 @@ var parse = function(programInfo) {
                     advance("=");
                     t.first = n;
 
-                    if (this.params && this.params.length > 0) {
-                        Context.scope.push(this.params[0].scope);
+                    if (this.params) {
+                        if (this.params.length > 0) {
+                            Context.scope.push(this.params[0].scope);
+                        }
+                        else {
+                            new_scope();
+                        }
                     }
 
                     if (this.params && Context.token.id === "[") {
@@ -603,7 +608,7 @@ var parse = function(programInfo) {
 
                     t.second = immediate();
 
-                    if (this.params && this.params.length > 0) {
+                    if (this.params) {
                         Context.scope.pop();
                     }
 
