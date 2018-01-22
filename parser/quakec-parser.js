@@ -879,6 +879,21 @@ Program.prototype.getTypeString = function(position) {
     if (!definition) {
         return null;
     }
+
+    if (!definition.scope) {
+        // Handle vector component accessors
+        let vectorComponent = reference.value.slice(-2);
+        if (["_x", "_y", "_z"].includes(vectorComponent)) {
+            let vectorDefinition = scope.find(reference.value.slice(0, -2));
+
+            if (vectorDefinition && vectorDefinition.type && (vectorDefinition.type.value === "vector" || vectorDefinition.type.value === ".vector")) {
+                return `float ${reference.value}`;
+            }
+        }
+        else {
+            definition = null;
+        }
+    }
     
     let resolveType = function(type) {
         let result = type.value;
