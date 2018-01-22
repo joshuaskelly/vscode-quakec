@@ -7,7 +7,7 @@ import * as parser from "quakec-parser";
 import {
 	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument, 
 	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem, 
-	CompletionItemKind, Position, Location
+	CompletionItemKind, Position, Location, Hover
 } from 'vscode-languageserver';
 
 import { 
@@ -34,7 +34,8 @@ connection.onInitialize((params): InitializeResult => {
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
-			definitionProvider: true
+			definitionProvider: true,
+			hoverProvider: true
 		}
 	}
 });
@@ -56,6 +57,10 @@ let maxNumberOfProblems: number;
 
 connection.onDefinition((request:TextDocumentPositionParams):Location => {
 	return documentManager.getDefinition(request);
+});
+
+connection.onHover((request:TextDocumentPositionParams):Hover => {
+	return documentManager.getHover(request);
 });
 
 connection.listen();

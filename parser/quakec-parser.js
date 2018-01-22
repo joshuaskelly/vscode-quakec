@@ -860,6 +860,46 @@ Program.prototype.getSymbol = function(position) {
     return null;
 };
 
+Program.prototype.getTypeString = function(position) {
+    let reference = this.getSymbol(position);
+
+    if (!reference) {
+        return null;
+    }
+
+    let scope = reference.scope;
+
+    if (!scope) {
+        return null;
+    }
+
+    let definition = scope.find(reference.value);
+
+    
+    if (!definition) {
+        return null;
+    }
+    
+    let resolveType = function(type) {
+        let result = type.value;
+
+        if (!type.params) {
+            return result;
+        }
+
+        let ps = type.params.map(function(c) {
+            return `${resolveType(c.type)} ${c.value}`;
+        });
+        
+        return `${result}(${ps.join(", ")})`;
+    };
+
+    let symbolName = definition.value;
+    let symbolType = resolveType(definition.type);
+
+    return `${symbolType} ${symbolName}`;
+};
+
 Program.prototype.getDefinition = function(position) {
     let reference = this.getSymbol(position);
 

@@ -8,6 +8,7 @@ import * as path from "path";
 import * as parser from "quakec-parser";
 
 import {
+    Hover,
     Location,
     Position,
     TextDocument,
@@ -82,6 +83,31 @@ export class SourceDocumentManager {
             this.invalidateProgram(document.uri);
             this.validateProgramCache();
         }
+    }
+
+    public getHover(request: TextDocumentPositionParams) : Hover {
+        let position: Position = request.position;
+        let uri: string = request.textDocument.uri;
+
+        let programCacheItem: ProgramCacheItem = this.programs[uri];
+
+        if (!programCacheItem) {
+            return null;
+        }
+
+        if (!programCacheItem.isValid) {
+            this.validateProgram(uri);
+        }
+
+        let program: Program = programCacheItem.program;
+        let type: string = program.getTypeString(position);
+
+        return {
+            contents: {
+                language: "quakec",
+                value: type
+            }
+        };
     }
 
     public getDefinition(request: TextDocumentPositionParams): Location {

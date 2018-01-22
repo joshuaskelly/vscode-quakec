@@ -34,7 +34,8 @@ declare module "quakec-parser" {
         uri: string,
         ast: any,
         scope: Scope,
-        getDefinition: (position: Position) => Location
+        getDefinition: (position: Position) => Location,
+        getTypeString: (position: Position) => string
     };
 
     export function parse(input:ParseInfo): Program;
