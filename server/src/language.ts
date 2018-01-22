@@ -4,6 +4,7 @@
  */
 
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as parser from "quakec-parser";
 
@@ -113,7 +114,14 @@ export class SourceDocumentManager {
 
     private fromVSCodeUri(uri: string): string {
         uri = uri.replace(/file:[\\/]+/, "");
-        uri = uri.replace("%3A", ":");
+        let osType: string = os.type();
+
+        if (osType === "Windows_NT") {
+            uri = uri.replace("%3A", ":");
+        }
+        else if (osType === "Darwin") {
+            uri = path.posix.sep + uri;
+        }
 
         return path.normalize(uri);
     }
