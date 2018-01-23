@@ -133,6 +133,10 @@ var parse = function(programInfo) {
 
         symbols.push(Context.token);
 
+        if (o.refs) {
+            Context.scope.reference(Context.token);
+        }
+
         return Context.token;
     };
 
@@ -161,6 +165,8 @@ var parse = function(programInfo) {
             n.lbp = 0;
             n.scope = Context.scope;
             n.type = y;
+
+            Context.scope.reference(n);
 
             return n;
         },
@@ -215,6 +221,16 @@ var parse = function(programInfo) {
 
             this.def[n.value] = n;
             n.reserved = true;
+        },
+        reference: function(n) {
+            if (n.arity === "name") {
+                let def = Context.scope.find(n.value);
+                if (!def.refs) {
+                    def.refs = [];
+                }
+    
+                def.refs.push(n);
+            }
         }
     };
 
@@ -989,8 +1005,45 @@ Program.prototype.getDefinition = function(position) {
     return null;
 };
 
-Program.prototype.getReferences = function(position, includeDefinition) {
+Program.prototype.getReferences = function(position, includeDeclaration) {
     let reference = this.getSymbol(position);
+
+    if (!reference) {
+        return null;
+    }
+
+    let scope = reference.scope;
+
+    if (!scope) {
+        return null;
+    }
+
+    let definition = scope.find(reference.value);
+
+    if (!definition.scope) {
+        return null;
+    }
+
+    let result = [];
+
+    if (!definition.refs) {
+        return result;
+    }
+
+    for (let symbol of definition.refs) {
+        if (!includeDeclaration && symbol === definition) {
+            continue;
+        }
+        
+        result.push(
+            {
+                uri: symbol.scope.uri,
+                range: symbol.range
+            }
+        );
+    }
+
+    return result;
 };
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {

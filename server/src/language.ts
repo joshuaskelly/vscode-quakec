@@ -12,6 +12,7 @@ import {
     Hover,
     Location,
     Position,
+    ReferenceParams,
     TextDocument,
     TextDocumentPositionParams
 } from 'vscode-languageserver';
@@ -81,27 +82,20 @@ export class SourceDocumentManager {
                 document: document
             };
             
-            this.setDocumentCacheItem(document.uri, documentCacheItem);
-            this.invalidateProgram(document.uri);
+            this.setDocumentCacheItem(uri, documentCacheItem);
+            this.invalidateProgram(uri);
             this.validateProgramCache();
         }
     }
 
     public getHover(request: TextDocumentPositionParams) : Hover {
-        let position: Position = request.position;
-        let uri: string = this.fromVSCodeUri(request.textDocument.uri);
-        let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
+        let program: Program = this.getProgram(request);
 
-        if (!programCacheItem) {
+        if (!program) {
             return null;
         }
 
-        if (!programCacheItem.isValid) {
-            this.validateProgram(uri);
-        }
-
-        let program: Program = programCacheItem.program;
-        let type: string = program.getTypeString(position);
+        let type: string = program.getTypeString(request.position);
 
         return {
             contents: {
@@ -111,32 +105,36 @@ export class SourceDocumentManager {
         };
     }
 
-    private fromVSCodeUri(uri: string): string {
-        uri = uri.replace(/file:[\\/]+/, "");
-        let osType: string = os.type();
-
-        if (osType === "Windows_NT") {
-            uri = uri.replace("%3A", ":");
-        }
-        else {
-            uri = path.posix.sep + uri;
-        }
-
-        return path.normalize(uri);
-    }
-
-    private toVSCodeUri(uri: string): string {
-        uri = uri.replace(/\\/g, path.posix.sep);
-        let osType = os.type();
-
-        if (osType === "Windows_NT") {
-            return "file:" + path.posix.sep + uri;
-        }
-
-        return "file:" + path.posix.sep + path.posix.sep + uri;
-    }
-
     public getDefinition(request: TextDocumentPositionParams): Location {
+        let program: Program = this.getProgram(request);
+
+        if (!program) {
+            return null;
+        }
+
+        let location: Location = program.getDefinition(request.position);
+        location.uri = this.toVSCodeUri(location.uri);
+        
+        return location;
+    }
+
+    public getReferences(request: ReferenceParams): Location[] {
+        let program: Program = this.getProgram(request);
+
+        if (!program) {
+            return null;
+        }
+
+        let locations: Location[] = program.getReferences(request.position, request.context.includeDeclaration);
+
+        for (let location of locations) {
+            location.uri = this.toVSCodeUri(location.uri);
+        }
+
+        return locations;
+    }
+
+    private getProgram(request: TextDocumentPositionParams): Program {
         let position: Position = request.position;
         let uri: string = this.fromVSCodeUri(request.textDocument.uri);
         
@@ -150,11 +148,7 @@ export class SourceDocumentManager {
             this.validateProgram(uri);
         }
 
-        let program: Program = programCacheItem.program;
-        let location: Location = program.getDefinition(position);
-        location.uri = this.toVSCodeUri(location.uri);
-        
-        return location;
+        return programCacheItem.program;
     }
 
     /**
@@ -333,5 +327,30 @@ export class SourceDocumentManager {
 
     private setDocumentCacheItem(uri: string, cacheItem: DocumentCacheItem): void {
         this.documents[uri.toLowerCase()] = cacheItem;
+    }
+
+    private fromVSCodeUri(uri: string): string {
+        uri = uri.replace(/file:[\\/]+/, "");
+        let osType: string = os.type();
+
+        if (osType === "Windows_NT") {
+            uri = uri.replace("%3A", ":");
+        }
+        else {
+            uri = path.posix.sep + uri;
+        }
+
+        return path.normalize(uri);
+    }
+
+    private toVSCodeUri(uri: string): string {
+        uri = uri.replace(/\\/g, path.posix.sep);
+        let osType = os.type();
+
+        if (osType === "Windows_NT") {
+            return "file:" + path.posix.sep + uri;
+        }
+
+        return "file:" + path.posix.sep + path.posix.sep + uri;
     }
 }

@@ -7,7 +7,7 @@ import * as parser from "quakec-parser";
 import {
 	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument, 
 	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem, 
-	CompletionItemKind, Position, Location, Hover
+	CompletionItemKind, Position, Location, Hover, ReferenceParams
 } from 'vscode-languageserver';
 
 import { 
@@ -18,6 +18,8 @@ import {
 import {
 	SourceDocumentManager
 } from "./language";
+import { connect } from "tls";
+import { request } from "http";
 
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 let documents: TextDocuments = new TextDocuments();
@@ -35,7 +37,8 @@ connection.onInitialize((params): InitializeResult => {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
 			definitionProvider: true,
-			hoverProvider: true
+			hoverProvider: true,
+			referencesProvider: true
 		}
 	}
 });
@@ -61,6 +64,10 @@ connection.onDefinition((request:TextDocumentPositionParams):Location => {
 
 connection.onHover((request:TextDocumentPositionParams):Hover => {
 	return documentManager.getHover(request);
+});
+
+connection.onReferences((request: ReferenceParams): Location[] => {
+	return documentManager.getReferences(request);
 });
 
 connection.listen();
