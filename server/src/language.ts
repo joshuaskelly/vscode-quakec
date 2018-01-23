@@ -14,11 +14,13 @@ import {
     Position,
     ReferenceParams,
     TextDocument,
-    TextDocumentPositionParams
+    TextDocumentPositionParams,
+    Diagnostic,
+    DiagnosticSeverity
 } from 'vscode-languageserver';
 
 import { 
-    Program, Scope, ParseInfo 
+    Program, Scope, ParseInfo, Error 
 } from "quakec-parser";
 import { relative } from "path";
 
@@ -39,6 +41,7 @@ export class SourceDocumentManager {
     private documents: {[uri: string]: DocumentCacheItem};
     private programs: {[uri: string]: ProgramCacheItem};
     private sourceOrder: string[];
+    private documentsParsed: number;
 
     /**
      * Create a SourceDocumentManager
@@ -84,12 +87,12 @@ export class SourceDocumentManager {
             
             this.setDocumentCacheItem(uri, documentCacheItem);
             this.invalidateProgram(uri);
-            this.validateProgramCache();
+            this.validateProgramCache(uri);
         }
     }
 
     public getHover(request: TextDocumentPositionParams) : Hover {
-        let program: Program = this.getProgram(request);
+        let program: Program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return null;
@@ -106,7 +109,7 @@ export class SourceDocumentManager {
     }
 
     public getDefinition(request: TextDocumentPositionParams): Location {
-        let program: Program = this.getProgram(request);
+        let program: Program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return null;
@@ -119,10 +122,10 @@ export class SourceDocumentManager {
     }
 
     public getReferences(request: ReferenceParams): Location[] {
-        let program: Program = this.getProgram(request);
+        let program: Program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
-            return null;
+            return [];
         }
 
         let locations: Location[] = program.getReferences(request.position, request.context.includeDeclaration);
@@ -134,10 +137,39 @@ export class SourceDocumentManager {
         return locations;
     }
 
-    private getProgram(request: TextDocumentPositionParams): Program {
-        let position: Position = request.position;
-        let uri: string = this.fromVSCodeUri(request.textDocument.uri);
+    public getDiagnostics(request: TextDocument): Diagnostic[] {
+        let program: Program = this.getProgram(request.uri);
+
+        if (!program) {
+            return [];
+        }
+
+        let diagnostics: Diagnostic[] = [];
+        let errors: Error[] = program.getErrors();
+
+        for (let error of errors) {
+            let severity: DiagnosticSeverity = [
+                null,
+                DiagnosticSeverity.Error,
+                DiagnosticSeverity.Warning,
+                DiagnosticSeverity.Information,
+                DiagnosticSeverity.Hint
+            ][error.severity];
+
+            let diagnostic: Diagnostic = {
+                range: error.range,
+                severity: severity,
+                message: error.message
+            };
+
+            diagnostics.push(diagnostic);
+        }
         
+        return diagnostics;
+    }
+
+    private getProgram(uri: string): Program {
+        uri = this.fromVSCodeUri(uri);
         let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
@@ -218,7 +250,12 @@ export class SourceDocumentManager {
         return TextDocument.create(uri, langId, 1, content);
     }
 
-    private validateProgramCache() {
+    private validateProgramCache(stopAtUri?: string) {
+        console.log("Validating AST Cache");
+        let start: number = new Date().getTime();
+        this.documentsParsed = 0;
+        let done: boolean = false;
+
         if (this.sourceOrder) {
             let scope: Scope = null;
 
@@ -230,12 +267,26 @@ export class SourceDocumentManager {
                 if (program) {
                     scope = program.scope;
                 }
+
+                if (uri === stopAtUri) {
+                    done = true;
+                    break;
+                }
             }
         }
 
-        for (let uri in this.programs) {
-            this.validateProgram(uri);
+        if (!done) {
+            for (let uri in this.programs) {
+                this.validateProgram(uri);
+
+                if (uri === stopAtUri) {
+                    return;
+                }
+            }
         }
+
+        let elapsed: number = new Date().getTime() - start;
+        console.log(`Parsed ${this.documentsParsed} documents in ${elapsed} milliseconds`);
     };
 
     private validateProgram(uri: string, scope?: Scope): Program {
@@ -262,6 +313,8 @@ export class SourceDocumentManager {
             program: program
         };
         this.setProgramCacheItem(uri, programCacheItem);
+
+        this.documentsParsed += 1;
 
         return program;
     };

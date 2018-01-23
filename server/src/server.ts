@@ -7,7 +7,7 @@ import * as parser from "quakec-parser";
 import {
 	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument, 
 	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem, 
-	CompletionItemKind, Position, Location, Hover, ReferenceParams
+	CompletionItemKind, Position, Location, Hover, ReferenceParams, PublishDiagnosticsParams
 } from 'vscode-languageserver';
 
 import { 
@@ -44,8 +44,15 @@ connection.onInitialize((params): InitializeResult => {
 });
 
 documents.onDidChangeContent((change) => {
-	//documentManager = new SourceDocumentManager(workspaceRoot);
 	documentManager.updateDocument(change.document);
+	let diagnostics: Diagnostic[] = documentManager.getDiagnostics(change.document);
+
+	let d: PublishDiagnosticsParams = {
+		uri: change.document.uri,
+		diagnostics: diagnostics
+	};
+
+	connection.sendDiagnostics(d);
 });
 
 interface Settings {

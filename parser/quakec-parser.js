@@ -5,6 +5,7 @@ var Range = common.Range;
 
 var lexer;
 var symbols;
+var errors;
 
 var Context = {
     token: null,
@@ -15,6 +16,7 @@ var Context = {
 var parse = function(programInfo) {
     lexer = Lexer();
     symbols = [];
+    errors = [];
 
     Context = {
         token: null,
@@ -34,7 +36,28 @@ var parse = function(programInfo) {
             if (Context.scope) {
                 loc =  " " + Context.scope.uri;
             }
-            console.error("ParseError" + loc +"(" + this.range.start.line + "," + this.range.start.character + "): " + message);
+
+            errors.push(
+                {
+                    range: this.range,
+                    severity: 1,
+                    message: message
+                }
+            );
+        },
+        warn: function(message) {
+            let loc = "";
+            if (Context.scope) {
+                loc =  " " + Context.scope.uri;
+            }
+
+            errors.push(
+                {
+                    range: this.range,
+                    severity: 2,
+                    message: message
+                }
+            );
         }
     };
 
@@ -150,11 +173,12 @@ var parse = function(programInfo) {
             var t = this.def[n.value];
 
             if (typeof t === "object") {
-                n.error(
-                    t.reserved ?
-                    "Already reserved: '" + n.value + "'." :
-                    "Already defined: '" + n.value + "'."
-                );
+                if (t.reserved) {
+                    n.error("Already reserved: '" + n.value + "'.");
+                }
+                else {
+                    n.warn("Already defined: '" + n.value + "'.")
+                }
             }
 
             this.def[n.value] = n;
@@ -912,13 +936,14 @@ var parse = function(programInfo) {
     var s = Context.scope;
     Context.scope.pop()
 
-    return new Program(ast, s, symbols);
+    return new Program(ast, s, symbols, errors);
 };
 
-var Program = function(ast, scope, symbols) {
+var Program = function(ast, scope, symbols, errors) {
     this.ast = ast;
     this.scope = scope;
     this.symbols = symbols;
+    this.errors = errors;
 };
 
 Program.prototype.getSymbol = function(position) {
@@ -1044,6 +1069,10 @@ Program.prototype.getReferences = function(position, includeDeclaration) {
     }
 
     return result;
+};
+
+Program.prototype.getErrors = function() {
+    return this.errors;
 };
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
