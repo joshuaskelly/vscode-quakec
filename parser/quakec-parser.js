@@ -484,6 +484,7 @@ var parse = function(programInfo) {
                 }
 
                 Context.scope.define(n, this);
+                expandVectorDefinition(n);
                 advance();
 
                 if (Context.token.id === "=") {
@@ -582,6 +583,7 @@ var parse = function(programInfo) {
                 }
 
                 Context.scope.define(n, this);
+                expandVectorDefinition(n);
                 advance();
 
                 if (Context.token.id === "=") {
@@ -640,6 +642,54 @@ var parse = function(programInfo) {
         x.ded = d; 
 
         return x;
+    };
+
+    /**
+     * Vector types need to also define three additional names for each component.
+     * 
+     * For example:
+     *    vector origin;
+     * 
+     * Should also define:
+     *    vector origin_x;
+     *    vector origin_y;
+     *    vector origin_z;
+     * 
+     * @param {symbol} n - The symbol to add component definitions for
+     */
+    var expandVectorDefinition = function(n) {
+        if (n.type && (n.type.value === "vector" || n.type.value === ".vector")) {
+            // Define x-component
+            let value = n.type.value === "vector" ? "float" : ".float";
+            let nx = Object.create(n);
+            nx.value = n.value + "_x";
+            nx.type = {
+                value: value,
+                arity: "type",
+                range: n.type.range
+            };
+            Context.scope.define(nx, nx.type);
+            
+            // Define y-component
+            let ny = Object.create(n);
+            ny.value = n.value + "_y";
+            ny.type = {
+                value: value,
+                arity: "type",
+                range: n.type.range
+            };
+            Context.scope.define(ny, ny.type);
+            
+            // Define z-component
+            let nz = Object.create(n);
+            nz.value = n.value + "_z";
+            nz.type = {
+                value: value,
+                arity: "type",
+                range: n.type.range
+            };
+            Context.scope.define(nz, nz.type);
+        }
     };
 
     var definition = function() {
@@ -886,18 +936,7 @@ Program.prototype.getTypeString = function(position) {
     }
 
     if (!definition.scope) {
-        // Handle vector component accessors
-        let vectorComponent = reference.value.slice(-2);
-        if (["_x", "_y", "_z"].includes(vectorComponent)) {
-            let vectorDefinition = scope.find(reference.value.slice(0, -2));
-
-            if (vectorDefinition && vectorDefinition.type && (vectorDefinition.type.value === "vector" || vectorDefinition.type.value === ".vector")) {
-                return `float ${reference.value}`;
-            }
-        }
-        else {
-            definition = null;
-        }
+        return null;
     }
     
     let resolveType = function(type) {
@@ -936,18 +975,7 @@ Program.prototype.getDefinition = function(position) {
     let definition = scope.find(reference.value);
 
     if (!definition.scope) {
-        // Handle vector component accessors
-        let vectorComponent = reference.value.slice(-2);
-        if (["_x", "_y", "_z"].includes(vectorComponent)) {
-            let vectorDefinition = scope.find(reference.value.slice(0, -2));
-
-            if (vectorDefinition && vectorDefinition.type && (vectorDefinition.type.value === "vector" || vectorDefinition.type.value === ".vector")) {
-                definition = vectorDefinition;
-            }
-        }
-        else {
-            definition = null;
-        }
+        return null;
     }
 
     if (definition) {
