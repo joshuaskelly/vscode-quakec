@@ -659,8 +659,9 @@ var parse = function(programInfo) {
      */
     var expandVectorDefinition = function(n) {
         if (n.type && (n.type.value === "vector" || n.type.value === ".vector")) {
-            // Define x-component
             let value = n.type.value === "vector" ? "float" : ".float";
+            
+            // Define x-component
             let nx = Object.create(n);
             nx.value = n.value + "_x";
             nx.type = {
