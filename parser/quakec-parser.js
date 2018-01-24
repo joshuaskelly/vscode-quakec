@@ -409,7 +409,7 @@ var parse = function(programInfo) {
             //v.error("Bad expression statement.");
         }
 
-        advance(";");
+        semicolon();
 
         return v;
     };
@@ -499,6 +499,19 @@ var parse = function(programInfo) {
         return a;
     });
 
+    var semicolon = function() {
+        if (Context.token.id !== ";") {
+            let previousToken = symbols.slice(-2, -1);
+
+            if (previousToken && previousToken.length == 1) {
+                previousToken[0].error("Missing semicolon.");
+            }
+        }
+        else {
+            advance(";");
+        }
+    };
+
     /**
      * Process parameters for definitions
      * 
@@ -543,7 +556,7 @@ var parse = function(programInfo) {
                 advance(",");
             }
 
-            advance(";");
+            semicolon();
 
             if (a.length === 0) {
                 return null;
@@ -620,6 +633,7 @@ var parse = function(programInfo) {
 
                 if (n.arity !== "name") {
                     n.error("Expected a new variable name.");
+                    return;
                 }
 
                 Context.scope.define(n, this);
@@ -665,7 +679,7 @@ var parse = function(programInfo) {
                 advance(",");
             }
 
-            advance(";");
+            semicolon();
 
             if (a.length === 0) {
                 return null;
@@ -837,7 +851,7 @@ var parse = function(programInfo) {
         this.second = expression(0);
         this.arity = "statement";
         advance(")");
-        advance(";");
+        semicolon();
 
         return this;
     });
@@ -873,7 +887,7 @@ var parse = function(programInfo) {
             this.first = expression(0);
         }
 
-        advance(";");
+        semicolon();
 
         if (Context.token.id !== "}") {
             // TODO: Make the below smarter

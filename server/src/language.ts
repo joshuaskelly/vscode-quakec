@@ -122,6 +122,7 @@ export class SourceDocumentManager {
     }
 
     public getReferences(request: ReferenceParams): Location[] {
+        this.validateProgramCache();
         let program: Program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
