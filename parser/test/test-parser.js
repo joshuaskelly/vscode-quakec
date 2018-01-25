@@ -5,138 +5,168 @@ var parse = function(program) {
 };
 
 describe("Parser", function() {
+    assert.noErrors = function(program) {
+        assert.equal(0, program.errors.length, "Parse errors occurred");
+    };
+
     describe("Definitions", function() {
         describe("Simple Types", function() {
             it("Should be able to define a float", function() {
-                var program = `float time;`;
-                var actual = parse(program);
+                let program = `float time;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
 
-                var definition = actual.scope.def["time"];
+                let definition = actual.scope.def["time"];
                 assert.equal(definition.value, "time")
             });
             it("Should be able to init a float", function() {
-                var program = `float time = 0.0;`;
-                var actual = parse(program);
+                let program = `float time = 0.0;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a vector", function() {
-                var program = `vector position;`;
-                var actual = parse(program);
+                let program = `vector position;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to init a vector", function() {
-                var program = `vector position ='1.0 0 -2.0';`;
-                var actual = parse(program);
+                let program = `vector position ='1.0 0 -2.0';`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a string", function() {
-                var program = `string message;`;
-                var actual = parse(program);
+                let program = `string message;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to init a string", function() {
-                var program = `string message = "hello world!\n";`;
-                var actual = parse(program);
+                let program = `string message = "hello world!\n";`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define an entity", function() {
-                var program = `entity target;`;
-                var actual = parse(program);
+                let program = `entity target;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define multiple variables", function() {
-                var program = `float parm1, parm2, parm3;`;
-                var actual = parse(program);
+                let program = `float parm1, parm2, parm3;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to initialize multiple variables", function() {
-                var program = `float parm1, parm2, parm3 = 0;`;
-                var actual = parse(program);
+                let program = `float parm1, parm2, parm3 = 0;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Field Types", function() {
             it("Should be able to define a .float", function() {
-                var program = `.float time;`;
-                var actual = parse(program);
+                let program = `.float time;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to init a .float", function() {
-                var program = `.float time = 0.0;`;
-                var actual = parse(program);
+                let program = `.float time = 0.0;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a .vector", function() {
-                var program = `.vector position;`;
-                var actual = parse(program);
+                let program = `.vector position;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to init a .vector", function() {
-                var program = `.vector position ='1.0 0 -2.0';`;
-                var actual = parse(program);
+                let program = `.vector position ='1.0 0 -2.0';`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a .string", function() {
-                var program = `.string message;`;
-                var actual = parse(program);
+                let program = `.string message;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to init a .string", function() {
-                var program = `.string message = "hello world!\n";`;
-                var actual = parse(program);
+                let program = `.string message = "hello world!\n";`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define an .entity", function() {
-                var program = `.entity target;`;
-                var actual = parse(program);
+                let program = `.entity target;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Function Types", function() {
             it("Should be able to forward declare a function", function() {
-                var program = `void() update;`;
-                var actual = parse(program);
+                let program = `void() update;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to forward declare a function that takes simple args", function() {
-                var program = `void(entity target) update;`;
-                var actual = parse(program);
+                let program = `void(entity target) update;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to forward declare a function that takes function args", function() {
-                var program = `void(entity target, void() callback) update;`;
-                var actual = parse(program);
+                let program = `void(entity target, void() callback) update;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a function", function() {
-                var program = `void() update = {float time = 0.0;};`;
-                var actual = parse(program);
+                let program = `void() update = {float time = 0.0;};`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a function via a builtin", function() {
-                var program = `void(vector ang)	makevectors = #1;`;
-                var actual = parse(program);
+                let program = `void(vector ang)	makevectors = #1;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Frames", function() {
             it("Should be able to define frames", function() {
-                var program = `$frame frame1 frame2 frame3`;
-                var actual = parse(program);
+                let program = `$frame frame1 frame2 frame3`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a frame function", function() {
-                var program = `void() framename = [$frame1, nextthink] {};`;
-                var actual = parse(program);
+                let program = `void() framename = [$frame1, nextthink] {};`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should be able to define a frame function with float literal", function() {
-                var program = `void() framename = [0, nextthink] {};`;
-                var actual = parse(program);
+                let program = `void() framename = [0, nextthink] {};`;
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
     });
     describe("Statements", function() {
         describe("Conditional", function() {
             it("Should handle if statements", function() {
-                var program = `
+                let program = `
                 void() test = {
                     float i = 10;
                     if (i > 0)
                         i = 0;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle block if statements", function() {
-                var program = `
+                let program = `
                 void() test = {
                     float i = 10;
                     if (i > 0) {
                         i = 0;
                     }
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle if else statements", function() {
-                var program = `
+                let program = `
                 void() test = {
                     float i = 10;
                     if (i > 0) {
@@ -146,10 +176,11 @@ describe("Parser", function() {
                         i = i + 1;
                     }
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle nested if else statements", function() {
-                var program = `
+                let program = `
                 void() test = {
                     float i = 10;
                     if (i > 0) {
@@ -161,22 +192,24 @@ describe("Parser", function() {
                         i = i + 1;
                     }
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Control", function() {
             it("Should handle do loops", function() {
-                var program = `
+                let program = `
                 float i = 0;
                 void() test = {
                     do
                         i = i - 1;
                     while (i < 10);
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle block do loops", function() {
-                var program = `
+                let program = `
                 float i = 0;
                 void() test = {
                     do {
@@ -184,89 +217,100 @@ describe("Parser", function() {
                     }
                     while (i < 10);
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle while loops", function() {
-                var program = `
+                let program = `
                 float i = 0;
                 void() func = {
                     while (i < 10)
                         i = i - 1;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle block while loops", function() {
-                var program = `
+                let program = `
                 float i = 0;
                 void() func = {
                     while (i < 10) {
                         i = i - 1;
                     }
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Function Invocation", function() {
             it("Should handle invocation with no parameters", function() {
-                var program = `
+                let program = `
                 void() test = {
                     test();
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle invocation with parameters", function() {
-                var program = `
+                let program = `
                 void(float time) test = {
                     float a = 0;
                     test(a - 1);
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should have function parameters defined in local scope", function() {
-                var program = `
+                let program = `
                 float(float time) test = {
                     return time + 1;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle invocation on fields", function() {
-                var program = `
+                let program = `
                 void() test = {
                     self.th_walk();
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Return", function() {
             it("Should handle return statements", function() {
-                var program = `
+                let program = `
                 void() test = {
                     return;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle return statements with value", function() {
-                var program = `
+                let program = `
                 float() test = {
                     return 42;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Local Variables", function() {
             it("Should handle defining local variables", function() {
-                var program = `
+                let program = `
                 void() test = {
                     local float time;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle initializing local variables", function() {
-                var program = `
+                let program = `
                 void() test = {
                     local float time = 0.0;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle local variable assignment", function() {
                 program = `
@@ -274,164 +318,186 @@ describe("Parser", function() {
                     v = v - 360;
                     return v;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
     });
     describe("Expressions", function() {
         describe("Infix", function() {
             it("Should handle the && operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 && 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the || operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 || 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the <= operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 <= 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the >= operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 >= 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the == operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 == 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the != operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 != 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the * operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 * 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the / operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 / 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the - operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 - 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the + operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 + 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the = operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     local float t;
                     t = 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle = on fields", function() {
-                var program = `
+                let program = `
                 void() test = {
                     self.solid = 0;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the < operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 < 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the > operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 > 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the & operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 & 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the | operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     1 | 2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
         describe("Prefix", function() {
             it("Should handle the ! operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     !1;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the - operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     -2;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the ( operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     (0);
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
             it("Should handle the $ operator", function() {
-                var program = `
+                let program = `
                 void() test = {
                     float a = $frame1;
                 };`;
-                var actual = parse(program);
+                let actual = parse(program);
+                assert.noErrors(actual);
             });
         });
     });
     describe("Errors", function() {
         it("Should handle undefined names", function() {
-            var program = `
+            let program = `
             void() test = {
                 onerror();
             };`;
-            var actual = parse(program);
+            let actual = parse(program);
+            assert.noErrors(actual);
         });
     });
 });

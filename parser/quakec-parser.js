@@ -953,141 +953,172 @@ var parse = function(programInfo) {
     return new Program(ast, s, symbols, errors);
 };
 
-var Program = function(ast, scope, symbols, errors) {
-    this.ast = ast;
-    this.scope = scope;
-    this.symbols = symbols;
-    this.errors = errors;
-};
+class Program {
+    /**
+     * Creates a Program.
+     * 
+     * @param {Symbol} ast 
+     * @param {Scope} scope 
+     * @param {Symbol[]} symbols 
+     * @param {Error[]} errors 
+     */
+    constructor(ast, scope, symbols, errors) {
+        this.ast = ast;
+        this.scope = scope;
+        this.symbols = symbols;
+        this.errors = errors;
+    }
 
-Program.prototype.getSymbol = function(position) {
-    for (let i = 0; i < this.symbols.length; i++) {
-        let s = this.symbols[i];
-        if (s.range.contains(position)) {
-            return s;
+    /**
+     * Returns the symbol at the given position.
+     * 
+     * @param {Position} position
+     * 
+     * @returns {Symbol}
+     */
+    getSymbol(position) {
+        for (let i = 0; i < this.symbols.length; i++) {
+            let s = this.symbols[i];
+
+            if (s.range.contains(position)) {
+                return s;
+            }
         }
-    }
-
-    return null;
-};
-
-Program.prototype.getTypeString = function(position) {
-    let reference = this.getSymbol(position);
-
-    if (!reference) {
-        return null;
-    }
-
-    let scope = reference.scope;
-
-    if (!scope) {
-        return null;
-    }
-
-    let definition = scope.find(reference.value);
-
     
-    if (!definition) {
         return null;
     }
 
-    if (!definition.scope) {
-        return null;
-    }
-    
-    let resolveType = function(type) {
-        let result = type.value;
-
-        if (!type.params) {
-            return result;
-        }
-
-        let ps = type.params.map(function(c) {
-            return `${resolveType(c.type)} ${c.value}`;
-        });
+    /**
+     * Get a string representing the type of the symbol at a given position.
+     * 
+     * @param {Position} position The position of the symbol
+     * 
+     * @returns {string}
+     */
+    getTypeString(position) {
+        let definition = this.getSymbolDefinition(position);
         
-        return `${result}(${ps.join(", ")})`;
-    };
+        if (!definition) {
+            return null;
+        }
+        
+        /**
+         * A recursive helper function to resolve the types of function parameters
+         * 
+         * @param {Symbol} type 
+         * 
+         * @returns {string}
+         */
+        let resolveType = function(type) {
+            let result = type.value;
 
-    let symbolName = definition.value;
-    let symbolType = resolveType(definition.type);
+            if (!type.params) {
+                return result;
+            }
 
-    return `${symbolType} ${symbolName}`;
-};
+            let ps = type.params.map(function(c) {
+                return `${resolveType(c.type)} ${c.value}`;
+            });
+            
+            return `${result}(${ps.join(", ")})`;
+        };
 
-Program.prototype.getDefinition = function(position) {
-    let reference = this.getSymbol(position);
+        let symbolName = definition.value;
+        let symbolType = resolveType(definition.type);
 
-    if (!reference) {
-        return null;
+        return `${symbolType} ${symbolName}`;
     }
 
-    let scope = reference.scope;
+    /**
+     * Gets the location of the defintion for the symbol at the given position.
+     * 
+     * @param {Position} position 
+     * 
+     * @returns {Location}
+     */
+    getDefinition(position) {
+        let definition = this.getSymbolDefinition(position);
 
-    if (!scope) {
-        return null;
-    }
+        if (!definition) {
+            return null;
+        }
 
-    let definition = scope.find(reference.value);
-
-    if (!definition.scope) {
-        return null;
-    }
-
-    if (definition) {
         return {
             uri: definition.scope.uri,
             range: definition.range
         };
     }
 
-    return null;
-};
+    /**
+     * Gets the locations of all references to the symbol at the given position.
+     * 
+     * @param {Position} position 
+     * @param {boolean} includeDeclaration 
+     * 
+     * @returns {Location[]}
+     */
+    getReferences(position, includeDeclaration) {
+        let definition = this.getSymbolDefinition(position);
+        let result = [];
 
-Program.prototype.getReferences = function(position, includeDeclaration) {
-    let reference = this.getSymbol(position);
+        if (!definition || !definition.refs) {
+            return result;
+        }
 
-    if (!reference) {
-        return null;
-    }
+        for (let symbol of definition.refs) {
+            if (!includeDeclaration && symbol === definition) {
+                continue;
+            }
+            
+            result.push(
+                {
+                    uri: symbol.scope.uri,
+                    range: symbol.range
+                }
+            );
+        }
 
-    let scope = reference.scope;
-
-    if (!scope) {
-        return null;
-    }
-
-    let definition = scope.find(reference.value);
-
-    if (!definition.scope) {
-        return null;
-    }
-
-    let result = [];
-
-    if (!definition.refs) {
         return result;
     }
 
-    for (let symbol of definition.refs) {
-        if (!includeDeclaration && symbol === definition) {
-            continue;
+    /**
+     * Gets the symbol at the given position
+     * 
+     * @param {Position} position 
+     * 
+     * @returns {Symbol}
+     */
+    getSymbolDefinition(position) {
+        let reference = this.getSymbol(position);
+
+        if (!reference) {
+            return null;
         }
-        
-        result.push(
-            {
-                uri: symbol.scope.uri,
-                range: symbol.range
-            }
-        );
+
+        let scope = reference.scope;
+
+        if (!scope) {
+            return null;
+        }
+
+        let definition = scope.find(reference.value);
+
+        if (!definition.scope) {
+            return null;
+        }
+
+        return definition;
     }
 
-    return result;
-};
-
-Program.prototype.getErrors = function() {
-    return this.errors;
-};
+    /**
+     * Get the errors generated during parsing
+     * 
+     * @returns {Error[]}
+     */
+    getErrors() {
+        return this.errors;
+    }
+}
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
     exports.parse = parse;
