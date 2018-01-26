@@ -4,547 +4,469 @@ var common = require("./quakec-common");
 var Range = common.Range;
 
 var lexer;
-var symbols;
-var errors;
 
+/**
+ * Global parsing context object.
+ */
 var Context = {
+    /**
+     * The current token.
+     * 
+     * @type {Symbol} token
+     */
     token: null,
+
+    /**
+     * A table of defined and reserved Symbols.
+     * 
+     * @type {{[id: string]: Symbol}} symbol_table
+     */
     symbol_table: {},
-    scope: null
+
+    /**
+     * The current scope.
+     * 
+     * @type {Scope} scope
+     */
+    scope: null,
+
+    /**
+     * An array of parsed symbols.
+     * 
+     * @type {Symbols[]} symbols
+     */
+    symbols: [],
+
+    /**
+     * An array of Errors.
+     * 
+     * @type {Error[]} errors
+     */
+    errors: []
 };
 
-var parse = function(programInfo) {
-    lexer = Lexer();
-    symbols = [];
-    errors = [];
+class Symbol {
+    constructor() {
+        this.std = null;
+        this.ded = null;
+        this.tyd = null;
+    }
+    /**
+     * Null denotation parser. Does not care about symbols to the left. Used for parsing literals
+     * variables and prefix operators.
+     * 
+     * @returns {Symbol}
+     */
+    nud () {
+        this.error("Undefined.");
+    }
 
-    Context = {
-        token: null,
-        symbol_table: {},
-        scope: null
-    };
+    /**
+     * Left denotation parser. Used for parsing infix and suffix operators.
+     * 
+     * @param {Symbol} left 
+     * 
+     * @returns {Symbol}
+     */
+    led(left) {
+        this.error("Missing operator.");
+    }
 
-    var original_symbol = {
-        nud: function() {
-            this.error("Undefined.");
-        },
-        led: function(left) {
-            this.error("Missing operator.");
-        },
-        error: function(message) {
-            let loc = "";
-            if (Context.scope) {
-                loc =  " " + Context.scope.uri;
-            }
+    /**
+     * Statement denotation parser.
+     * 
+     * @returns {Symbol}
+     */
+    std() {}
 
-            errors.push(
-                {
-                    range: this.range,
-                    severity: 1,
-                    message: message
-                }
-            );
-        },
-        warn: function(message) {
-            let loc = "";
-            if (Context.scope) {
-                loc =  " " + Context.scope.uri;
-            }
+    /**
+     * Definition statement denotation parser.
+     * 
+     * @returns {Symbol}
+     */
+    ded() {}
 
-            errors.push(
-                {
-                    range: this.range,
-                    severity: 2,
-                    message: message
-                }
-            );
+    /**
+     * Type denotation parser.
+     * 
+     * @returns {Symbol}
+     */
+    tyd() {}
+
+    error(message) {
+        let loc = "";
+        if (Context.scope) {
+            loc =  " " + Context.scope.uri;
         }
-    };
 
-    var symbol = function(id, bp) {
-        var s = Context.symbol_table[id];
+        Context.errors.push(
+            {
+                range: this.range,
+                severity: 1,
+                message: message
+            }
+        );
+    }
+
+    warn(message) {
+        let loc = "";
+        if (Context.scope) {
+            loc =  " " + Context.scope.uri;
+        }
+
+        Context.errors.push(
+            {
+                range: this.range,
+                severity: 2,
+                message: message
+            }
+        );
+    }
+}
+
+class Scope {
+    /**
+     * Create a new Scope as the child of the current Context.scope. Then Context.scope will be set to
+     * the newly created Scope.
+     * 
+     * @param {string} uri An optional string identifer. Typically the source document.
+     * @param {Scope} parentScope 
+     */
+    constructor(uri, parentScope) {
+        /**
+         * The associated URI for this Scope. Optional.
+         * 
+         * @type {string} uri
+         */
+        this.uri = uri;
+
+        /**
+         * A associative array of definitions.
+         * 
+         * @type {{[value: string]: Symbol}}} def
+         */
+        this.def = {};
+
+        /**
+         * The parent Scope.
+         * 
+         * @type {Scope} parent
+         */
+        this.parent = Context.scope || parentScope;
+
+        Context.scope = this;
+    }
+
+    /**
+     * Transforms a name token into a variable token.
+     * 
+     * @param {Symbol} symbol The Symbol to define.
+     * @param {Symbol} type The type of the Symbol.
+     */
+    define(symbol, type) {
+        let t = this.def[symbol.value];
+
+        if (typeof t === "object") {
+            if (t.reserved) {
+                symbol.error("Already reserved: '" + symbol.value + "'.");
+            }
+            else {
+                symbol.warn("Already defined: '" + symbol.value + "'.")
+            }
+        }
+
+        this.def[symbol.value] = symbol;
+        symbol.reserved = false;
+        symbol.nud = itself;
+        symbol.led = null;
+        symbol.std = null;
+        symbol.lbp = 0;
+        symbol.scope = Context.scope;
+        symbol.type = type;
+
+        Context.scope.reference(symbol);
+
+        return symbol;
+    }
+
+    /**
+     * Finds the definition of a name.
+     * 
+     * @param {Symbol} symbol 
+     * 
+     * @returns {Symbol}
+     */
+    find(symbol) {
+        let currentScope = this;
+        let prototypeObject;
+
+        while (true) {
+            prototypeObject = currentScope.def[symbol];
+            
+            if (prototypeObject && typeof prototypeObject !== "function") {
+                return currentScope.def[symbol];
+            }
+
+            currentScope = currentScope.parent;
+
+            if (!currentScope) {
+                prototypeObject = Context.symbol_table[symbol];
+
+                if (prototypeObject && typeof prototypeObject != "function") {
+                    return prototypeObject;
+                }
+
+                return Context.symbol_table["(name)"];
+            }
+        }
+    }
+
+    /**
+     * Opens a Scope and sets the given scope as the Context.scope. This will not change 
+     * the parent of the given scope.
+     * 
+     * @param {Scope} scope 
+     */
+    push(scope) {
+        if (scope.parent !== Context.scope) {
+            console.error("Bad scope pushed.")
+        }
+
+        Context.scope = scope;
+    }
+
+    /**
+     * Closes a Scope and sets Context.scope to Context.scope.parent.
+     */
+    pop() {
+        Context.scope = this.parent;
+    }
+
+    /**
+     * Indicate that the given symbol is a reserved word.
+     * 
+     * @param {Symbol} symbol 
+     */
+    reserve(symbol) {
+        if (symbol.arity !== "name" || symbol.reserved) {
+            return;
+        }
+
+        let definition = this.def[symbol.value];
+
+        if (definition) {
+            if (definition.reserved) {
+                return;
+            }
+            if (definition.arity === "name") {
+                symbol.error("Already defined.");
+            }
+        }
+
+        this.def[symbol.value] = symbol;
+        symbol.reserved = true;
+    }
+
+    /**
+     * Add a reference to the given symbol.
+     * 
+     * @param {Symbol} symbol 
+     */
+    reference(symbol) {
+        if (symbol.arity === "name") {
+            let def = Context.scope.find(symbol.value);
+            if (!def.refs) {
+                def.refs = [];
+            }
+
+            def.refs.push(symbol);
+        }
+    }
+}
+
+/**
+ * Namespace for defining language constructs.
+ */
+class Define {
+    /**
+     * Defines a symbol with the given id and left binding power.
+     * 
+     * @param {string} id Token id.
+     * @param {number} bp Left binding power.
+     * 
+     * @returns {Symbol}
+     */
+    static symbol(id, bp) {
+        let s = Context.symbol_table[id];
         bp = bp || 0;
-
+    
         if (s) {
             if (bp >= s.lbp) {
                 s.lbp = bp;
             }
         }
         else {
-            s = Object.create(original_symbol);
+            s = new Symbol();
             s.id = s.value = id;
             s.lbp = bp;
             Context.symbol_table[id] = s;
         }
-
+    
         return s;
     }
 
-    symbol(";");
-    symbol(",");
-    symbol(")");
-    symbol("}");
-    symbol("[");
-    symbol("]");
-    symbol("$");
-    symbol("else");
-
-    var advance = function(id) {
-        var a;
-        var o;
-        var t;
-        var v;
-
-        if (id && Context.token.id !== id) {
-            Context.token.error("Expected: '" + id + "' Actual: '" + Context.token.id + "'");
-        }
-
-        t = lexer.lex();
-
-        if (t === undefined) {
-            Context.token = Context.symbol_table['(end)'];
-            Context.token.range = new Range(
-                {line: -1, character: -1},
-                {line: -1, character: -1}
-            );
-            return;
-        }
-
-        v = t.value;
-        a = t.type;
-
-        if (a === "name") {
-            o = Context.scope.find(v);
-        }
-        else if (a === "operator") {
-            o = Context.symbol_table[v];
-
-            if (!o) {
-                t.error("Unknown operator");
-            }
-        }
-        else if (a === "string" || a === "float" || a === "vector" || a === "builtin") {
-            var ff = Context.symbol_table[a];
-
-            a = "literal";
-            o = Context.symbol_table["(literal)"];
-
-            if (ff) {
-                o.type = ff;
-            }
-        }
-        else if (a === "type") {
-            a = "type";
-            o = Context.scope.find(v);
-        }
-        else {
-            t.error("Unexpected token");
-        }
-
-        Context.token = Object.create(o);
-        Context.token.value = v;
-        Context.token.arity = a;
-        Context.token.range = t.range;
-
-        if (!Context.token.scope && Context.token.arity === "name") {
-            Context.token.scope = Context.scope;
-        }
-
-        if (Context.token.scope && Context.token.scope !== Context.scope) {
-            Context.token.scope = Context.scope;
-        }
-
-        symbols.push(Context.token);
-
-        if (o.refs) {
-            Context.scope.reference(Context.token);
-        }
-
-        return Context.token;
-    };
-
-    var itself = function() {
-        return this;
-    };
-
-    var original_scope = {
-        uri: programInfo.uri,
-        define: function(n, y) {
-            var t = this.def[n.value];
-
-            if (typeof t === "object") {
-                if (t.reserved) {
-                    n.error("Already reserved: '" + n.value + "'.");
-                }
-                else {
-                    n.warn("Already defined: '" + n.value + "'.")
-                }
-            }
-
-            this.def[n.value] = n;
-            n.reserved = false;
-            n.nud = itself;
-            n.led = null;
-            n.std = null;
-            n.lbp = 0;
-            n.scope = Context.scope;
-            n.type = y;
-
-            Context.scope.reference(n);
-
-            return n;
-        },
-        find: function(n) {
-            var e = this, o;
-
-            while (true) {
-                o = e.def[n];
-                
-                if (o && typeof o !== "function") {
-                    return e.def[n];
-                }
-
-                e = e.parent;
-
-                if (!e) {
-                    o = Context.symbol_table[n];
-
-                    if (o && typeof o != "function") {
-                        return o;
-                    }
-
-                    return Context.symbol_table["(name)"];
-                }
-            }
-        },
-        push: function(s) {
-            if (s.parent !== Context.scope) {
-                console.error("Bad scope pushed.")
-            }
-
-            Context.scope = s;
-        },
-        pop: function() {
-            Context.scope = this.parent;
-        },
-        reserve: function(n) {
-            if (n.arity !== "name" || n.reserved) {
-                return;
-            }
-
-            var t = this.def[n.value];
-
-            if (t) {
-                if (t.reserved) {
-                    return;
-                }
-                if (t.arity === "name") {
-                    n.error("Already defined.");
-                }
-            }
-
-            this.def[n.value] = n;
-            n.reserved = true;
-        },
-        reference: function(n) {
-            if (n.arity === "name") {
-                let def = Context.scope.find(n.value);
-                if (!def.refs) {
-                    def.refs = [];
-                }
+    /**
+     * Defines an infix operator.
+     * 
+     * @param {string} id 
+     * @param {number} bp 
+     * @param {(left: Symbol) => Symbol} led
+     * 
+     * @returns {Symbol}
+     */
+    static infix(id, bp, led) {
+        let symbol = Define.symbol(id, bp);
     
-                def.refs.push(n);
-            }
-        }
-    };
-
-    var new_scope = function() {
-        var s = Context.scope || programInfo.parentScope;
-        Context.scope = Object.create(original_scope);
-        Context.scope.def = {};
-        Context.scope.parent = s;
-
-        return Context.scope;
-    };
-
-    var expression = function(rbp) {
-        var left;
-        var t = Context.token;
-        advance();
-        left = t.nud();
-
-        while (rbp < Context.token.lbp) {
-            t = Context.token;
-            advance();
-            left = t.led(left);
-        }
-
-        return left;
-    };
-
-    var infix = function(id, bp, led) {
-        var s = symbol(id, bp);
-
-        s.led = led || function(left) {
+        symbol.led = led || function(left) {
             this.first = left;
-            this.second = expression(bp);
+            this.second = Parse.expression(bp);
             this.arity = "binary";
-
+    
             return this;
         };
+    
+        return symbol;
+    }
 
-        return s;
-    };
-
-    infix("+", 50);
-    infix("-", 50);
-    infix("*", 60);
-    infix("/", 60);
-    infix("==", 40);
-    infix("!=", 40);
-    infix("<", 40);
-    infix("<=", 40);
-    infix(">", 40);
-    infix(">=", 40);
-
-    infix(".", 80, function (left) {
-        this.first = left;
-
-        if (Context.token.arity !== "name") {
-            Context.token.error("Expected a property name.");
-        }
-
-        Context.token.arity = "literal";
-        this.second = Context.token;
-        this.arity = "binary";
-        advance();
-
-        return this;
-    });
-
-    var infixr = function(id, bp, led) {
-        var s = symbol(id, bp);
-
-        s.led = led || function(left) {
+    /**
+     * Defines a right-associative infix operator.
+     * 
+     * @param {string} id 
+     * @param {number} bp 
+     * @param {(left: Symbol) => Symbol} led
+     * 
+     * @returns {Symbol}
+     */
+    static infixr(id, bp, led) {
+        let symbol = Define.symbol(id, bp);
+    
+        symbol.led = led || function(left) {
             this.first = left;
-            this.second = expression(bp - 1);
+            this.second = Parse.expression(bp - 1);
             this.arity = "binary";
-
+    
             return this;
         };
+    
+        return symbol;
+    }
 
-        return s;
-    };
-
-    infixr("&", 40);
-    infixr("|", 40);
-    infixr("&&", 30);
-    infixr("||", 30);
-
-    var prefix = function(id, nud) {
-        var s = symbol(id);
-        s.nud = nud || function() {
+    /**
+     * Defines a prefix operator.
+     * 
+     * @param {string} id 
+     * @param {(left: Symbol) => Symbol} nud
+     * 
+     * @returns {Symbol}
+     */
+    static prefix(id, nud) {
+        let symbol = Define.symbol(id);
+        symbol.nud = nud || function() {
             Context.scope.reserve(this);
-            this.first = expression(70);
+            this.first = Parse.expression(70);
             this.arity = "unary";
-
+    
             return this;
         };
+    
+        return symbol;
+    }
 
-        return s;
-    };
-
-    prefix("!");
-    prefix("-");
-    prefix("$");
-
-    prefix("(", function() {
-        var e = expression(0);
-        advance(")");
-
-        return e;
-    });
-
-    var assignment = function(id) {
-        return infixr(id, 10, function(left) {
+    /**
+     * Defines an assignment expression.
+     * 
+     * @param {string} id
+     * 
+     * @returns {Symbol}
+     */
+    static assignment(id) {
+        return Define.infixr(id, 10, function(left) {
             if (left.id !== "." && left.arity !== "name") {
                 left.error("Bad lvalue.");
             }
-
+    
             this.first = left;
-            this.second = expression(9);
+            this.second = Parse.expression(9);
             this.assignment = true;
             this.arity = "binary";
-
+    
             return this;
         });
-    };
-
-    assignment("=");
-
-    symbol("(end)");
-    symbol("(literal)").nud = itself;
-    symbol("(type)").nud = itself;
-    symbol("(name)").nud = itself;
-    symbol("(declaration)");
-
-    // Parses a single statement
-    var statement = function() {
-        var n = Context.token;
-        var v;
-
-        if (n.std) {
-            advance();
-            Context.scope.reserve(n);
-
-            return n.std();
-        }
-
-        v = expression(0);
-
-        if (!v) {
-            n.error("Bad expression statement.");
-        }
-        else if (!v.assignment && v.id !== "(") {
-            //v.error("Bad expression statement.");
-        }
-
-        semicolon();
-
-        return v;
-    };
-
-    // Parses statements
-    var statements = function() {
-        var a = [];
-        var s;
-
-        while(true) {
-            if (Context.token.id === "}" || Context.token.id === "(end)") {
-                break;
-            }
-
-            s = statement();
-
-            if (s) {
-                a.push(s);
-            }
-        }
-
-        if (a.length === 0) {
-            return null;
-        }
-
-        if (a.length === 1) {
-            return a[0];
-        }
-
-        return a;
-    };
-
-    // Builds statements
-    var stmt = function(s, f) {
-        var x = symbol(s);
-        x.std = f;
-
-        return x;
-    };
-
-    stmt("{", function() {
-        new_scope();
-        var a = statements();
-        advance("}");
-        Context.scope.pop();
-
-        return a;
-    });
-
-    var block = function() {
-        var t = Context.token;
-        advance("{");
-        
-        return t.std();
-    };
-
-    // Parses immediates
-    var immediate = function() {
-        var n = Context.token;
-
-        if (Context.token.imd) {
-            return Context.token.imd();
-        }
-
-        n.error("Bad immediate.");
-
-        return n;
-    };
-
-    // Builds immediates
-    var immd = function(s, f) {
-        var x = symbol(s);
-        x.imd = f || function() {
-            return expression(0);
-        };
-
-        return x;
-    };
-
-    immd("(literal)");
-
-    immd("{", function() {
-        advance("{");
-        var a = statements();
-        advance("}")
-
-        return a;
-    });
-
-    var semicolon = function() {
-        if (Context.token.id !== ";") {
-            let previousToken = symbols.slice(-2, -1);
-
-            if (previousToken && previousToken.length == 1) {
-                previousToken[0].error("Missing semicolon.");
-            }
-        }
-        else {
-            advance(";");
-        }
-    };
+    }
 
     /**
-     * Process parameters for definitions
+     * Defines a statement.
      * 
-     * @param {string} s - The symbol id as a string
-     * @param {function} f - The statement denotation callback function
-     * @param {function} t - The type denotation callback function
-     * @param {function} d - The definition denotation callback function
+     * @param {string} id 
+     * @param {() => Symbol} std 
      */
-    var defn = function(i, f, t, d) {
+    static statement(id, std) {
+        let symbol = Define.symbol(id);
+        symbol.std = std;
+    
+        return symbol;
+    }
+
+    /**
+     * Defines an immediate.
+     * 
+     * @param {string} id 
+     * @param {() => Symbol} imd 
+     */
+    static immediate(id, imd) {
+        let symbol = Define.symbol(id);
+        symbol.imd = imd || function() {
+            return Parse.expression(0);
+        };
+    
+        return symbol;
+    }
+
+    /**
+     * Defines a definition statement.
+     * 
+     * @param {string} id
+     * @param {() => Symbol} std
+     * @param {() => Symbol} tyd
+     * @param {() => Symbol} ded
+     * 
+     * @returns {Symbol}
+     */
+    static definition(id, std, tyd, ded) {
         // Default statement denotation parser
-        f = f || function() {
+        std = std || function() {
             var a = [];
             var n;
             var t;
-
+    
             this.tyd();
-
+    
             n = Context.token;
-
+    
             while (true) {
                 if (n.arity !== "name") {
                     n.error("Expected a new variable name.");
                 }
-
+    
                 Context.scope.define(n, this);
                 expandVectorDefinition(n);
-                advance();
-
+                Parse.advance();
+    
                 if (Context.token.id === "=") {
                     t = Context.token;
-                    advance("=");
+                    Parse.advance("=");
                     t.first = n;
-                    t.second = expression(0);
+                    t.second = Parse.expression(0);
                     t.arity = "binary";
                     a.push(t);
                 }
@@ -552,66 +474,66 @@ var parse = function(programInfo) {
                 if (Context.token.id !== ",") {
                     break;
                 }
-
-                advance(",");
+    
+                Parse.advance(",");
             }
-
+    
             semicolon();
-
+    
             if (a.length === 0) {
                 return null;
             }
-
+    
             if (a.length === 1) {
                 return a[0];
             }
-
+    
             return a;
         };
-
+    
         // Default type denotation parser
-        t = t || function () {
+        tyd = tyd || function () {
             var n = Context.token;
             var p = [];
             var parameter_type, parameter_name;
-
+    
             // For function types process the parameter list
             if (n.value === "(") {
-                advance("(");
-
+                Parse.advance("(");
+    
                 if (Context.token.id !== ")") {
-                    new_scope();
-
+                    new Scope();
+    
                     while (true) {
                         parameter_type = Context.token;
-
+    
                         if (parameter_type.arity !== "type") {
                             parameter_type.error("Expected a parameter type.")
                         }
-
-                        advance();
+    
+                        Parse.advance();
                         parameter_type.tyd();
                         parameter_name = Context.token;
-
+    
                         if (parameter_name.arity !== "name") {
                             parameter_name.error("Expected a parameter name.")
                         }
-
-                        advance();
+    
+                        Parse.advance();
                         // TODO: Only define these in a function body? Maybe process the type parameters.
                         Context.scope.define(parameter_name, parameter_type);
                         p.push(parameter_name);
-
+    
                         if (Context.token.id !== ",") {
                             break;
                         }
-
-                        advance(",");
+    
+                        Parse.advance(",");
                     }
-
+    
                     Context.scope.pop();
                 }
-                advance(")");
+                Parse.advance(")");
                 n = Context.token;
                 
                 if (p) {
@@ -619,55 +541,55 @@ var parse = function(programInfo) {
                 }
             }
         };
-
+    
         // Default definition denotation parser
-        d = d || function() {
-            var a = [];
-            var n;
-            var t;
-
+        ded = ded || function() {
+            let a = [];
+            let n;
+            let t;
+    
             this.tyd();
             
             while (true) {
                 n = Context.token;
-
+    
                 if (n.arity !== "name") {
                     n.error("Expected a new variable name.");
                     return;
                 }
-
+    
                 Context.scope.define(n, this);
                 expandVectorDefinition(n);
-                advance();
-
+                Parse.advance();
+    
                 if (Context.token.id === "=") {
                     t = Context.token;
-                    advance("=");
+                    Parse.advance("=");
                     t.first = n;
-
+    
                     if (this.params) {
                         if (this.params.length > 0) {
                             Context.scope.push(this.params[0].scope);
                         }
                         else {
-                            new_scope();
+                            new Scope();
                         }
                     }
-
+    
                     if (this.params && Context.token.id === "[") {
-                        advance("[");
-                        expression(0);
-                        advance(",");
-                        expression(0);
-                        advance("]");
+                        Parse.advance("[");
+                        Parse.expression(0);
+                        Parse.advance(",");
+                        Parse.expression(0);
+                        Parse.advance("]");
                     }
-
-                    t.second = immediate();
-
+    
+                    t.second = Parse.immediate();
+    
                     if (this.params) {
                         Context.scope.pop();
                     }
-
+    
                     t.arity = "binary";
                     a.push(t);
                 }
@@ -675,282 +597,597 @@ var parse = function(programInfo) {
                 if (Context.token.id !== ",") {
                     break;
                 }
-
-                advance(",");
+    
+                Parse.advance(",");
             }
-
+    
             semicolon();
-
+    
             if (a.length === 0) {
                 return null;
             }
             else if (a.length === 1) {
                 return a[0];
             }
-
+    
             return a;
         };
+    
+        let symbol = Define.statement(id, std);
+        symbol.tyd = tyd;
+        symbol.ded = ded; 
+    
+        return symbol;
+    }
+}
 
-        var x = stmt(i, f);
-        x.tyd = t;
-        x.ded = d; 
-
-        return x;
-    };
+/**
+ * Namespace for parsing language constructs.
+ */
+class Parse {
+    /**
+     * Create a new Symbol from the token stream. This new symbol will also be set as Context.token.
+     * 
+     * An optional token id can be provided to verify the id of the current token.
+     * 
+     * @param {string} id Expected id of current token. Will report an error on mismatch.
+     * 
+     * @returns {Symbol}
+     */
+    static advance(id) {
+        let arity;
+        let prototypeObject;
+        let nextToken;
+        let value;
+    
+        if (id && Context.token.id !== id) {
+            Context.token.error("Expected: '" + id + "' Actual: '" + Context.token.id + "'");
+        }
+    
+        nextToken = lexer.lex();
+    
+        if (nextToken === undefined) {
+            Context.token = Context.symbol_table['(end)'];
+            Context.token.range = new Range(
+                {line: -1, character: -1},
+                {line: -1, character: -1}
+            );
+            return;
+        }
+    
+        value = nextToken.value;
+        arity = nextToken.type;
+    
+        if (arity === "name") {
+            prototypeObject = Context.scope.find(value);
+        }
+        else if (arity === "operator") {
+            prototypeObject = Context.symbol_table[value];
+    
+            if (!prototypeObject) {
+                nextToken.error("Unknown operator");
+            }
+        }
+        else if (arity === "string" || arity === "float" || arity === "vector" || arity === "builtin") {
+            let ff = Context.symbol_table[arity];
+    
+            arity = "literal";
+            prototypeObject = Context.symbol_table["(literal)"];
+    
+            if (ff) {
+                prototypeObject.type = ff;
+            }
+        }
+        else if (arity === "type") {
+            arity = "type";
+            prototypeObject = Context.scope.find(value);
+        }
+        else {
+            nextToken.error("Unexpected token");
+        }
+    
+        Context.token = Object.create(prototypeObject);
+        Context.token.value = value;
+        Context.token.arity = arity;
+        Context.token.range = nextToken.range;
+    
+        if (!Context.token.scope && Context.token.arity === "name") {
+            Context.token.scope = Context.scope;
+        }
+    
+        if (Context.token.scope && Context.token.scope !== Context.scope) {
+            Context.token.scope = Context.scope;
+        }
+    
+        Context.symbols.push(Context.token);
+    
+        if (prototypeObject.refs) {
+            Context.scope.reference(Context.token);
+        }
+    
+        return Context.token;
+    }
 
     /**
-     * Vector types need to also define three additional names for each component.
+     * Parses an expression.
      * 
-     * For example:
-     *    vector origin;
+     * @param {number} rbp The right binding power.
      * 
-     * Should also define:
-     *    vector origin_x;
-     *    vector origin_y;
-     *    vector origin_z;
-     * 
-     * @param {symbol} n - The symbol to add component definitions for
+     * @returns {Symbol}
      */
-    var expandVectorDefinition = function(n) {
-        if (n.type && (n.type.value === "vector" || n.type.value === ".vector")) {
-            let value = n.type.value === "vector" ? "float" : ".float";
-            
-            // Define x-component
-            let nx = Object.create(n);
-            nx.value = n.value + "_x";
-            nx.type = {
-                value: value,
-                arity: "type",
-                range: n.type.range
-            };
-            Context.scope.define(nx, nx.type);
-            
-            // Define y-component
-            let ny = Object.create(n);
-            ny.value = n.value + "_y";
-            ny.type = {
-                value: value,
-                arity: "type",
-                range: n.type.range
-            };
-            Context.scope.define(ny, ny.type);
-            
-            // Define z-component
-            let nz = Object.create(n);
-            nz.value = n.value + "_z";
-            nz.type = {
-                value: value,
-                arity: "type",
-                range: n.type.range
-            };
-            Context.scope.define(nz, nz.type);
+    static expression(rbp) {
+        let left;
+        let currentToken = Context.token;
+        Parse.advance();
+        left = currentToken.nud();
+    
+        while (rbp < Context.token.lbp) {
+            currentToken = Context.token;
+            Parse.advance();
+            left = currentToken.led(left);
         }
-    };
+    
+        return left;
+    }
 
-    var definition = function() {
+    /**
+     * Parses a single statement.
+     * 
+     * @returns {Symbol}
+     */
+    static statement() {
+        let currentToken = Context.token;
+        
+        if (currentToken.std) {
+            Parse.advance();
+            Context.scope.reserve(currentToken);
+            
+            return currentToken.std();
+        }
+        
+        let expression = Parse.expression(0);
+    
+        if (!expression) {
+            currentToken.error("Bad expression statement.");
+        }
+        else if (!expression.assignment && expression.id !== "(") {
+            //v.error("Bad expression statement.");
+        }
+    
+        semicolon();
+    
+        return expression;
+    }
+    
+    /**
+     * Parses a sequence of statements.
+     * 
+     * @returns {Symbol | Symbol[]}
+     */
+    static statements() {
+        let parsedStatements = [];
+        let statement;
+    
+        while(true) {
+            if (Context.token.id === "}") {
+                break;
+            }
+    
+            statement = Parse.statement();
+    
+            if (statement) {
+                parsedStatements.push(statement);
+            }
+        }
+    
+        if (parsedStatements.length === 0) {
+            return null;
+        }
+    
+        if (parsedStatements.length === 1) {
+            return parsedStatements[0];
+        }
+    
+        return parsedStatements;
+    }
+
+    /**
+     * Parses a block of statements.
+     * 
+     * @returns {Symbol}
+     */
+    static block() {
+        var currentToken = Context.token;
+        Parse.advance("{");
+        
+        return currentToken.std();
+    }
+
+    /**
+     * Parses an immediate.
+     * 
+     * @returns {Symbols}
+     */
+    static immediate() {
         var n = Context.token;
-        var v;
-
-        if (n.ded) {
-            advance();
-            Context.scope.reserve(n);
-
-            return n.ded();
+    
+        if (Context.token.imd) {
+            return Context.token.imd();
         }
-
-        n.error("Bad definition.");
-        advance();
-
+    
+        n.error("Bad immediate.");
+    
         return n;
-    };
+    }
 
-    var definitions = function() {
-        var a = [];
-        var d;
+    /**
+     * Parses a definition statement.
+     * 
+     * @returns {Symbol}
+     */
+    static definition() {
+        let currentSymbol = Context.token;
+    
+        if (currentSymbol.ded) {
+            Parse.advance();
+            Context.scope.reserve(currentSymbol);
+    
+            return currentSymbol.ded();
+        }
+    
+        currentSymbol.error("Bad definition.");
+        Parse.advance();
+    
+        return currentSymbol;
+    }
 
+    /**
+     * Parses a sequence of definition statments.
+     * 
+     * @returns {Symbol | Symbol[]}
+     */
+    static definitions () {
+        let parsedDefinitions = [];
+        let definition;
+    
         while (true) {
             if (Context.token.id === "(end)") {
                 break;
             }
-
-            d = definition();
-
-            if (d) {
-                a.push(d);
+    
+            definition = Parse.definition();
+    
+            if (definition) {
+                parsedDefinitions.push(definition);
             }
         }
-
-        if (a.length === 0) {
+    
+        if (parsedDefinitions.length === 0) {
             return null;
         }
-
-        if (a.length === 1) {
-            return a[0];
+    
+        if (parsedDefinitions.length === 1) {
+            return parsedDefinitions[0];
         }
+    
+        return parsedDefinitions;
+    }
+}
 
-        return a;
+var itself = function() {
+    return this;
+};
+
+Define.symbol(";");
+Define.symbol(",");
+Define.symbol(")");
+Define.symbol("}");
+Define.symbol("[");
+Define.symbol("]");
+Define.symbol("$");
+Define.symbol("else");
+
+Define.infix("+", 50);
+Define.infix("-", 50);
+Define.infix("*", 60);
+Define.infix("/", 60);
+Define.infix("==", 40);
+Define.infix("!=", 40);
+Define.infix("<", 40);
+Define.infix("<=", 40);
+Define.infix(">", 40);
+Define.infix(">=", 40);
+
+Define.infix(".", 80, function (left) {
+    this.first = left;
+
+    if (Context.token.arity !== "name") {
+        Context.token.error("Expected a property name.");
+    }
+
+    Context.token.arity = "literal";
+    this.second = Context.token;
+    this.arity = "binary";
+    Parse.advance();
+
+    return this;
+});
+
+Define.infixr("&", 40);
+Define.infixr("|", 40);
+Define.infixr("&&", 30);
+Define.infixr("||", 30);
+
+Define.prefix("!");
+Define.prefix("-");
+Define.prefix("$");
+
+Define.prefix("(", function() {
+    var e = Parse.expression(0);
+    Parse.advance(")");
+
+    return e;
+});
+
+Define.assignment("=");
+
+Define.symbol("(end)");
+Define.symbol("(literal)").nud = itself;
+Define.symbol("(type)").nud = itself;
+Define.symbol("(name)").nud = itself;
+
+Define.statement("{", function() {
+    new Scope();
+    var a = Parse.statements();
+    Parse.advance("}");
+    Context.scope.pop();
+
+    return a;
+});
+
+Define.immediate("(literal)");
+
+Define.immediate("{", function() {
+    Parse.advance("{");
+    var a = Parse.statements();
+    Parse.advance("}")
+
+    return a;
+});
+
+var semicolon = function() {
+    if (Context.token.id !== ";") {
+        let previousToken = Context.symbols.slice(-2, -1);
+
+        if (previousToken && previousToken.length == 1) {
+            previousToken[0].error("Missing semicolon.");
+        }
+    }
+    else {
+        Parse.advance(";");
+    }
+};
+
+/**
+ * Vector types need to also define three additional names for each component.
+ * 
+ * For example:
+ *    vector origin;
+ * 
+ * Should also define:
+ *    vector origin_x;
+ *    vector origin_y;
+ *    vector origin_z;
+ * 
+ * @param {symbol} n - The symbol to add component definitions for
+ */
+var expandVectorDefinition = function(n) {
+    if (n.type && (n.type.value === "vector" || n.type.value === ".vector")) {
+        let value = n.type.value === "vector" ? "float" : ".float";
+        
+        // Define x-component
+        let nx = Object.create(n);
+        nx.value = n.value + "_x";
+        nx.type = {
+            value: value,
+            arity: "type",
+            range: n.type.range
+        };
+        Context.scope.define(nx, nx.type);
+        
+        // Define y-component
+        let ny = Object.create(n);
+        ny.value = n.value + "_y";
+        ny.type = {
+            value: value,
+            arity: "type",
+            range: n.type.range
+        };
+        Context.scope.define(ny, ny.type);
+        
+        // Define z-component
+        let nz = Object.create(n);
+        nz.value = n.value + "_z";
+        nz.type = {
+            value: value,
+            arity: "type",
+            range: n.type.range
+        };
+        Context.scope.define(nz, nz.type);
+    }
+};
+
+Define.definition("void");
+Define.definition("float");
+Define.definition("vector");
+Define.definition("string");
+Define.definition("entity");
+Define.definition(".void");
+Define.definition(".float");
+Define.definition(".vector");
+Define.definition(".string");
+Define.definition(".entity");
+
+Define.definition(
+    "$frame", 
+    function() {
+        Context.token.error("$frame is not a valid statement.");
+    },
+    function() {
+        Context.token.error("$frame is not a valid type");
+    },
+    function() {
+        while (true) {
+            n = Context.token;
+
+            if (n.arity !== "name") {
+                break;
+            }
+
+            Context.scope.define(n, this);
+            Parse.advance();
+        }
+    }
+);
+
+Define.statement("while", function() {
+    Parse.advance("(");
+    this.first = Parse.expression(0);
+    Parse.advance(")");
+    if (Context.token.id === "{") {
+        this.second = Parse.block();
+    }
+    else {
+        this.second = Parse.statement();
+    }
+    this.arity = "statement";
+
+    return this;
+});
+
+Define.statement("do", function() {
+    if (Context.token.id === "{") {
+        this.first = Parse.block();
+    }
+    else {
+        this.first = Parse.statement();
+    }
+    Parse.advance("while");
+    Parse.advance("(");
+    this.second = Parse.expression(0);
+    this.arity = "statement";
+    Parse.advance(")");
+    semicolon();
+
+    return this;
+});
+
+Define.statement("if", function() {
+    Parse.advance("(");
+    this.test = Parse.expression(0);
+    Parse.advance(")");
+    this.body = Parse.statement();
+
+    if (Context.token.id === "else") {
+        Context.scope.reserve(Context.token);
+        Parse.advance("else");
+
+        if (Context.token.id === "if") {
+            this.else = Parse.statement();
+        }
+        else {
+            this.else = Parse.statement();
+        }
+    }
+    else {
+        this.else = null;
+    }
+
+    this.arity = "statement";
+
+    return this;
+});
+
+Define.statement("return", function() {
+    if (Context.token.id !== ";") {
+        this.first = Parse.expression(0);
+    }
+
+    semicolon();
+
+    if (Context.token.id !== "}") {
+        // TODO: Make the below smarter
+        //token.error("Unreachable statement.");
+    }
+
+    this.arity = "statement";
+
+    return this;
+});
+
+Define.infix("(", 80, function(left) {
+    var a = [];
+    if (left.id === ".") {
+        this.arity = "ternary";
+        this.first = left.first;
+        this.second = left.second;
+        this.third = a;
+    }
+    else {
+        this.arity = "binary";
+        this.first = left;
+        this.second = a;
+
+        if (left.arity !== "unary" && left.arity !== "name" && left.id !== "(" && left.id !== "&&" && left.id !== "||") {
+            left.error("Expected a variable name.");
+        }
+    }
+    
+    if (Context.token.id !== ")") {
+        while (true) {
+            a.push(Parse.expression(0));
+
+            if (Context.token.id !== ",") {
+                break;
+            }
+
+            Parse.advance(",");
+        }
+    }
+
+    Parse.advance(")");
+
+    return this;
+});
+
+Define.statement("local", function() {
+    if (Context.token.ded) {
+        this.first = Parse.definition();
+    }
+    this.arity = "statement";
+
+    return this;
+});
+
+var parse = function(programInfo) {
+    lexer = Lexer();
+
+    Context = {
+        token: null,
+        symbol_table: Object.create(Context.symbol_table),
+        scope: null,
+        symbols: [],
+        errors: []
     };
 
-    defn("void");
-    defn("float");
-    defn("vector");
-    defn("string");
-    defn("entity");
-    defn(".void");
-    defn(".float");
-    defn(".vector");
-    defn(".string");
-    defn(".entity");
-
-    defn(
-        "$frame", 
-        function() {
-            Context.token.error("$frame is not a valid statement.");
-        },
-        function() {
-            Context.token.error("$frame is not a valid type");
-        },
-        function() {
-            while (true) {
-                n = Context.token;
-
-                if (n.arity !== "name") {
-                    break;
-                }
-
-                Context.scope.define(n, this);
-                advance();
-            }
-        }
-    );
-
-    stmt("while", function() {
-        advance("(");
-        this.first = expression(0);
-        advance(")");
-        if (Context.token.id === "{") {
-            this.second = block();
-        }
-        else {
-            this.second = statement();
-        }
-        this.arity = "statement";
-
-        return this;
-    });
-
-    stmt("do", function() {
-        if (Context.token.id === "{") {
-            this.first = block();
-        }
-        else {
-            this.first = statement();
-        }
-        advance("while");
-        advance("(");
-        this.second = expression(0);
-        this.arity = "statement";
-        advance(")");
-        semicolon();
-
-        return this;
-    });
-
-    stmt("if", function() {
-        advance("(");
-        this.test = expression(0);
-        advance(")");
-        this.body = statement();//block();
-
-        if (Context.token.id === "else") {
-            Context.scope.reserve(Context.token);
-            advance("else");
-
-            if (Context.token.id === "if") {
-                this.else = statement();
-            }
-            else {
-                this.else = statement();//block();
-            }
-        }
-        else {
-            this.else = null;
-        }
-
-        this.arity = "statement";
-
-        return this;
-    });
-
-    stmt("return", function() {
-        if (Context.token.id !== ";") {
-            this.first = expression(0);
-        }
-
-        semicolon();
-
-        if (Context.token.id !== "}") {
-            // TODO: Make the below smarter
-            //token.error("Unreachable statement.");
-        }
-
-        this.arity = "statement";
-
-        return this;
-    });
-
-    infix("(", 80, function(left) {
-        var a = [];
-        if (left.id === ".") {
-            this.arity = "ternary";
-            this.first = left.first;
-            this.second = left.second;
-            this.third = a;
-        }
-        else {
-            this.arity = "binary";
-            this.first = left;
-            this.second = a;
-
-            if (left.arity !== "unary" && left.arity !== "name" && left.id !== "(" && left.id !== "&&" && left.id !== "||") {
-                left.error("Expected a variable name.");
-            }
-        }
-        
-        if (Context.token.id !== ")") {
-            while (true) {
-                a.push(expression(0));
-
-                if (Context.token.id !== ",") {
-                    break;
-                }
-
-                advance(",");
-            }
-        }
-
-        advance(")");
-
-        return this;
-    });
-
-    stmt("local", function() {
-        if (Context.token.ded) {
-            this.first = definition();
-        }
-        this.arity = "statement";
-
-        return this;
-    });
-
     lexer.setInput(programInfo.program);
-    new_scope();
-    advance();
-    var ast = definitions();
-    var s = Context.scope;
+    new Scope(programInfo.uri, programInfo.parentScope);
+    Parse.advance();
+    let ast = Parse.definitions();
+    let scope = Context.scope;
     Context.scope.pop()
 
-    return new Program(ast, s, symbols, errors);
+    return new Program(ast, scope, Context.symbols, Context.errors);
 };
 
 class Program {
