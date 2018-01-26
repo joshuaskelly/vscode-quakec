@@ -499,5 +499,18 @@ describe("Parser", function() {
             let actual = parse(program);
             assert.noErrors(actual);
         });
+        it("Should create an error for array access", function() {
+            let program = `
+            void() test = {
+                onerror[0];
+            };`;
+            let actual = parse(program);
+        });
+        it.only("Should create an error for array definitions", function() {
+            let program = `
+            float() times[4];`;
+            let actual = parse(program);
+            actual.getTypeString({line: 1, character: 33});
+        });
     });
 });

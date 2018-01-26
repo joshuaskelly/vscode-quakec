@@ -252,7 +252,7 @@ export class SourceDocumentManager {
     }
 
     private validateProgramCache(stopAtUri?: string) {
-        console.log("Validating AST Cache");
+        console.log("Validating AST Cache...");
         let start: number = new Date().getTime();
         this.documentsParsed = 0;
         let done: boolean = false;
@@ -263,6 +263,7 @@ export class SourceDocumentManager {
             for (let i = 0; i < this.sourceOrder.length; i++) {
                 let uri: string = this.sourceOrder[i];
                 
+                console.log(`   Validating ${path.win32.basename(uri)}`);
                 var program: Program = this.validateProgram(uri, scope);
 
                 if (program) {

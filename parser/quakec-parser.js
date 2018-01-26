@@ -128,6 +128,16 @@ class Scope {
          * 
          * @type {string} uri
          */
+
+        if (!uri) {
+            if (parentScope && parentScope.uri) {
+                uri = parentScope.uri;
+            }
+            else if (Context.scope && Context.scope.uri) {
+                uri = Context.scope.uri;
+            }
+        }
+
         this.uri = uri;
 
         /**
@@ -172,7 +182,7 @@ class Scope {
         symbol.std = null;
         symbol.lbp = 0;
         symbol.scope = Context.scope;
-        symbol.type = type;
+        symbol.type = Object.create(type);
 
         Context.scope.reference(symbol);
 
@@ -570,6 +580,25 @@ class Define {
                 Context.scope.define(n, this);
                 expandVectorDefinition(n);
                 Parse.advance();
+
+                if (Context.token.id === "[") {
+                    n.type.array = true;
+                    let openBracket = Context.token;
+                    Parse.advance("[");
+                    Parse.expression(0);
+                    let closeBracket = Context.token;
+                    if (Context.token.id !=="]") {
+                        Error.Recovery.advanceWhile(function(token) {
+                            return token.id !== "," && token.id !== ";";
+                        });
+                    }
+                    else {
+                        Parse.advance("]");
+                    }
+                    
+                    let range = new Range(openBracket.range.start, closeBracket.range.end);
+                    this.error("Array definition not supported", range);
+                }
     
                 if (Context.token.id === "=") {
                     t = Context.token;
@@ -940,6 +969,11 @@ Error.Recovery = class Recovery {
         });
     }
 
+    /**
+     * Ignores symbols until condition is true.
+     * 
+     * @param {(token: Symbol) => boolean} condition 
+    */
     static advanceWhile(condition) {
         condition = condition || function(token) {
             return currentToken.id;
@@ -1334,16 +1368,21 @@ class Program {
          */
         let resolveType = function(type) {
             let result = type.value;
+            let arrayPart = "";
+
+            if (type.array) {
+                arrayPart = "[]";
+            }
 
             if (!type.params) {
-                return result;
+                return result + arrayPart;
             }
 
             let ps = type.params.map(function(c) {
                 return `${resolveType(c.type)} ${c.value}`;
             });
             
-            return `${result}(${ps.join(", ")})`;
+            return `${result}(${ps.join(", ")})${arrayPart}`;
         };
 
         let symbolName = definition.value;
