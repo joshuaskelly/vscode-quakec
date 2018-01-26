@@ -1,7 +1,6 @@
-var Lexer = require("./quakec-lexer").Lexer;
-
-var common = require("./quakec-common");
-var Range = common.Range;
+const Lexer = require("./quakec-lexer").Lexer;
+const common = require("./quakec-common");
+const Range = common.Range;
 
 var lexer;
 
@@ -445,9 +444,9 @@ class Define {
     static definition(id, std, tyd, ded) {
         // Default statement denotation parser
         std = std || function() {
-            var a = [];
-            var n;
-            var t;
+            let a = [];
+            let n;
+            let t;
     
             this.tyd();
     
@@ -493,9 +492,9 @@ class Define {
     
         // Default type denotation parser
         tyd = tyd || function () {
-            var n = Context.token;
-            var p = [];
-            var parameter_type, parameter_name;
+            let n = Context.token;
+            let p = [];
+            let parameter_type, parameter_name;
     
             // For function types process the parameter list
             if (n.value === "(") {
@@ -797,7 +796,7 @@ class Parse {
      * @returns {Symbol}
      */
     static block() {
-        var currentToken = Context.token;
+        let currentToken = Context.token;
         Parse.advance("{");
         
         return currentToken.std();
@@ -809,7 +808,7 @@ class Parse {
      * @returns {Symbols}
      */
     static immediate() {
-        var n = Context.token;
+        let n = Context.token;
     
         if (Context.token.imd) {
             return Context.token.imd();
@@ -923,10 +922,10 @@ Define.prefix("-");
 Define.prefix("$");
 
 Define.prefix("(", function() {
-    var e = Parse.expression(0);
+    let expression = Parse.expression(0);
     Parse.advance(")");
 
-    return e;
+    return expression;
 });
 
 Define.assignment("=");
@@ -938,21 +937,21 @@ Define.symbol("(name)").nud = itself;
 
 Define.statement("{", function() {
     new Scope();
-    var a = Parse.statements();
+    let statements = Parse.statements();
     Parse.advance("}");
     Context.scope.pop();
 
-    return a;
+    return statements;
 });
 
 Define.immediate("(literal)");
 
 Define.immediate("{", function() {
     Parse.advance("{");
-    var a = Parse.statements();
+    let statements = Parse.statements();
     Parse.advance("}")
 
-    return a;
+    return statements;
 });
 
 var semicolon = function() {
@@ -1126,17 +1125,17 @@ Define.statement("return", function() {
 });
 
 Define.infix("(", 80, function(left) {
-    var a = [];
+    let functionParameters = [];
     if (left.id === ".") {
         this.arity = "ternary";
         this.first = left.first;
         this.second = left.second;
-        this.third = a;
+        this.third = functionParameters;
     }
     else {
         this.arity = "binary";
         this.first = left;
-        this.second = a;
+        this.second = functionParameters;
 
         if (left.arity !== "unary" && left.arity !== "name" && left.id !== "(" && left.id !== "&&" && left.id !== "||") {
             left.error("Expected a variable name.");
@@ -1145,7 +1144,7 @@ Define.infix("(", 80, function(left) {
     
     if (Context.token.id !== ")") {
         while (true) {
-            a.push(Parse.expression(0));
+            functionParameters.push(Parse.expression(0));
 
             if (Context.token.id !== ",") {
                 break;
