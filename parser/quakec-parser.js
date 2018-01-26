@@ -39,7 +39,7 @@ var Context = {
     /**
      * An array of Errors.
      * 
-     * @type {Error[]} errors
+     * @type {Diagnostic[]} errors
      */
     errors: []
 };
@@ -92,31 +92,22 @@ class Symbol {
      */
     tyd() {}
 
-    error(message) {
-        let loc = "";
-        if (Context.scope) {
-            loc =  " " + Context.scope.uri;
-        }
-
-        Context.errors.push(
-            {
-                range: this.range,
-                severity: 1,
-                message: message
-            }
-        );
+    error(message, range) {
+        this.diagnostic(message, 1, range)
     }
 
-    warn(message) {
-        let loc = "";
-        if (Context.scope) {
-            loc =  " " + Context.scope.uri;
-        }
+    warn(message, range) {
+        this.diagnostic(message, 2, range)
+    }
+
+    diagnostic(message, severity, range) {
+        range = range || this.range;
+        severity = severity || 4;
 
         Context.errors.push(
             {
-                range: this.range,
-                severity: 2,
+                range: range,
+                severity: severity,
                 message: message
             }
         );
@@ -390,7 +381,7 @@ class Define {
      */
     static assignment(id) {
         return Define.infixr(id, 10, function(left) {
-            if (left.id !== "." && left.arity !== "name") {
+            if (left.id !== "." && left.arity !== "name" && left.id !== "[") {
                 left.error("Bad lvalue.");
             }
     
@@ -448,6 +439,13 @@ class Define {
             let n;
             let t;
     
+            if (!this.tyd) {
+                Error.Recovery.advanceToNextSemicolon();
+                Parse.advance();
+
+                return null;
+            }
+
             this.tyd();
     
             n = Context.token;
@@ -477,7 +475,7 @@ class Define {
                 Parse.advance(",");
             }
     
-            semicolon();
+            Error.Strategy.missingSemicolon();
     
             if (a.length === 0) {
                 return null;
@@ -511,17 +509,22 @@ class Define {
                         }
     
                         Parse.advance();
-                        parameter_type.tyd();
-                        parameter_name = Context.token;
-    
-                        if (parameter_name.arity !== "name") {
-                            parameter_name.error("Expected a parameter name.")
+
+                        if (parameter_type.tyd) {
+                            parameter_type.tyd();
+                            parameter_name = Context.token;
+        
+                            if (parameter_name.arity !== "name") {
+                                parameter_name.error("Expected a parameter name.")
+                            }
+        
+                            Parse.advance();
+                            Context.scope.define(parameter_name, parameter_type);
+                            p.push(parameter_name);
                         }
-    
-                        Parse.advance();
-                        // TODO: Only define these in a function body? Maybe process the type parameters.
-                        Context.scope.define(parameter_name, parameter_type);
-                        p.push(parameter_name);
+                        else {
+                            Error.Recovery.advanceToNextTypeParameter();
+                        }
     
                         if (Context.token.id !== ",") {
                             break;
@@ -547,6 +550,13 @@ class Define {
             let n;
             let t;
     
+            if (!this.tyd) {
+                Error.Recovery.advanceToNextSemicolon();
+                Parse.advance();
+
+                return null;
+            }
+            
             this.tyd();
             
             while (true) {
@@ -600,7 +610,7 @@ class Define {
                 Parse.advance(",");
             }
     
-            semicolon();
+            Error.Strategy.missingSemicolon();
     
             if (a.length === 0) {
                 return null;
@@ -651,7 +661,8 @@ class Parse {
                 {line: -1, character: -1},
                 {line: -1, character: -1}
             );
-            return;
+
+            return Context.token;
         }
     
         value = nextToken.value;
@@ -682,7 +693,7 @@ class Parse {
             prototypeObject = Context.scope.find(value);
         }
         else {
-            nextToken.error("Unexpected token");
+            nextToken.error(`Unexpected token: '${nextToken.id}'`);
         }
     
         Context.token = Object.create(prototypeObject);
@@ -753,7 +764,7 @@ class Parse {
             //v.error("Bad expression statement.");
         }
     
-        semicolon();
+        Error.Strategy.missingSemicolon();
     
         return expression;
     }
@@ -834,10 +845,9 @@ class Parse {
             return currentSymbol.ded();
         }
     
-        currentSymbol.error("Bad definition.");
-        Parse.advance();
+        Error.Recovery.advanceToNextDefinition();
     
-        return currentSymbol;
+        return null;
     }
 
     /**
@@ -870,6 +880,83 @@ class Parse {
         }
     
         return parsedDefinitions;
+    }
+}
+
+/**
+ * Namespace for handling parse errors.
+ */
+class Error {};
+
+/**
+ * Namespace for handling known error conditions
+ */
+Error.Strategy = class Strategy {
+    /**
+     * Expects the current token to be a semicolon. Will raise error if expectation is not met.
+     */
+    static missingSemicolon() {
+        if (Context.token.id !== ";") {
+            let previousToken = Context.symbols.slice(-2, -1);
+    
+            if (previousToken && previousToken.length == 1) {
+                previousToken[0].error("Missing semicolon.");
+            }
+        }
+        else {
+            Parse.advance(";");
+        }
+    }
+}
+
+/**
+ * Namespace for handling unknown error conditions.
+ */
+Error.Recovery = class Recovery {
+    /**
+     * Ignore symbols until a semicolon is found.
+     */
+    static advanceToNextSemicolon() {
+        Error.Recovery.advanceWhile(function(token) {
+            return token.id !== ";";
+        });
+    }
+
+    /**
+     * Ignore symbols until a definition is found.
+     */
+    static advanceToNextDefinition() {
+        Error.Recovery.advanceWhile(function(token) {
+            return !token.ded;
+        });
+    }
+
+    /**
+     *  Ignore symbols until a comma or closing parenthesis is found.
+     */
+    static advanceToNextTypeParameter() {
+        Error.Recovery.advanceWhile(function(token) {
+            return token.id !== "," && token.id !== ")";
+        });
+    }
+
+    static advanceWhile(condition) {
+        condition = condition || function(token) {
+            return currentToken.id;
+        }
+
+        let currentToken = Context.token;
+        let id = currentToken.id;
+
+        if (id === "(name)")  {
+            id = currentToken.value;
+        }
+
+        currentToken.error(`Unexpected token: '${id}'`);
+
+        while(condition(currentToken) && currentToken.id !== "(end)") {
+            currentToken = Parse.advance();
+        }
     }
 }
 
@@ -908,6 +995,19 @@ Define.infix(".", 80, function (left) {
     this.second = Context.token;
     this.arity = "binary";
     Parse.advance();
+
+    return this;
+});
+
+Define.infix("[", 80, function (left) {
+    this.first = left;
+    this.second = Parse.expression(0);
+    this.arity = "binary";
+    let currentToken = Context.token;
+    Parse.advance("]");
+
+    let range = new Range(this.range.start, currentToken.range.end);
+    this.error("Bracket operator not supported.", range);
 
     return this;
 });
@@ -953,19 +1053,6 @@ Define.immediate("{", function() {
 
     return statements;
 });
-
-var semicolon = function() {
-    if (Context.token.id !== ";") {
-        let previousToken = Context.symbols.slice(-2, -1);
-
-        if (previousToken && previousToken.length == 1) {
-            previousToken[0].error("Missing semicolon.");
-        }
-    }
-    else {
-        Parse.advance(";");
-    }
-};
 
 /**
  * Vector types need to also define three additional names for each component.
@@ -1076,7 +1163,7 @@ Define.statement("do", function() {
     this.second = Parse.expression(0);
     this.arity = "statement";
     Parse.advance(")");
-    semicolon();
+    Error.Strategy.missingSemicolon();
 
     return this;
 });
@@ -1112,7 +1199,7 @@ Define.statement("return", function() {
         this.first = Parse.expression(0);
     }
 
-    semicolon();
+    Error.Strategy.missingSemicolon();
 
     if (Context.token.id !== "}") {
         // TODO: Make the below smarter
@@ -1196,7 +1283,7 @@ class Program {
      * @param {Symbol} ast 
      * @param {Scope} scope 
      * @param {Symbol[]} symbols 
-     * @param {Error[]} errors 
+     * @param {Diagnostic[]} errors 
      */
     constructor(ast, scope, symbols, errors) {
         this.ast = ast;
@@ -1349,7 +1436,7 @@ class Program {
     /**
      * Get the errors generated during parsing
      * 
-     * @returns {Error[]}
+     * @returns {Diagnostic[]}
      */
     getErrors() {
         return this.errors;
