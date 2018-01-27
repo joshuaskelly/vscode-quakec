@@ -165,17 +165,22 @@ class Scope {
      */
     define(symbol, type) {
         let t = this.def[symbol.value];
+        let alreadyDefined = false;
 
-        if (typeof t === "object") {
+        if (typeof t === "object" && t && (t.constant || !symbol.type.params)) {
             if (t.reserved) {
                 symbol.error("Already reserved: '" + symbol.value + "'.");
             }
             else {
+                alreadyDefined = true;
                 symbol.warn("Already defined: '" + symbol.value + "'.")
             }
         }
 
-        this.def[symbol.value] = symbol;
+        if (!alreadyDefined) {
+            this.def[symbol.value] = symbol;
+        }
+
         symbol.reserved = false;
         symbol.nud = itself;
         symbol.led = null;
@@ -280,6 +285,13 @@ class Scope {
             }
 
             def.refs.push(symbol);
+        }
+    }
+
+    constant(symbol) {
+        if (symbol.arity === "name") {
+            let def = Context.scope.find(symbol.value);
+            def.constant = true;
         }
     }
 }
@@ -446,8 +458,8 @@ class Define {
         // Default statement denotation parser
         std = std || function() {
             let a = [];
-            let n;
-            let t;
+            let name;
+            let assignment;
     
             if (!this.tyd) {
                 Error.Recovery.advanceToNextSemicolon();
@@ -458,24 +470,24 @@ class Define {
 
             this.tyd();
     
-            n = Context.token;
+            name = Context.token;
     
             while (true) {
-                if (n.arity !== "name") {
-                    n.error("Expected a new variable name.");
+                if (name.arity !== "name") {
+                    name.error("Expected a new variable name.");
                 }
     
-                Context.scope.define(n, this);
-                expandVectorDefinition(n);
+                Context.scope.define(name, this);
+                expandVectorDefinition(name);
                 Parse.advance();
     
                 if (Context.token.id === "=") {
-                    t = Context.token;
+                    assignment = Context.token;
                     Parse.advance("=");
-                    t.first = n;
-                    t.second = Parse.expression(0);
-                    t.arity = "binary";
-                    a.push(t);
+                    assignment.first = name;
+                    assignment.second = Parse.expression(0);
+                    assignment.arity = "binary";
+                    a.push(assignment);
                 }
                 
                 if (Context.token.id !== ",") {
@@ -557,7 +569,7 @@ class Define {
         // Default definition denotation parser
         ded = ded || function() {
             let a = [];
-            let n;
+            let name;
             let t;
     
             if (!this.tyd) {
@@ -570,19 +582,19 @@ class Define {
             this.tyd();
             
             while (true) {
-                n = Context.token;
+                name = Context.token;
     
-                if (n.arity !== "name") {
-                    n.error("Expected a new variable name.");
+                if (name.arity !== "name") {
+                    name.error("Expected a new variable name.");
                     return;
                 }
     
-                Context.scope.define(n, this);
-                expandVectorDefinition(n);
+                Context.scope.define(name, this);
+                expandVectorDefinition(name);
                 Parse.advance();
 
                 if (Context.token.id === "[") {
-                    n.type.array = true;
+                    name.type.array = true;
                     let openBracket = Context.token;
                     Parse.advance("[");
                     Parse.expression(0);
@@ -601,9 +613,10 @@ class Define {
                 }
     
                 if (Context.token.id === "=") {
+                    Context.scope.constant(name);
                     t = Context.token;
                     Parse.advance("=");
-                    t.first = n;
+                    t.first = name;
     
                     if (this.params) {
                         if (this.params.length > 0) {
