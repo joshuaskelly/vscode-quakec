@@ -100,6 +100,10 @@ export class SourceDocumentManager {
 
         let type: string = program.getTypeString(request.position);
 
+        if (!type) {
+            return null;
+        }
+
         return {
             contents: {
                 language: "quakec",
