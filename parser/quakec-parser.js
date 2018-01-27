@@ -597,7 +597,7 @@ class Define {
                     }
                     
                     let range = new Range(openBracket.range.start, closeBracket.range.end);
-                    this.error("Array definition not supported", range);
+                    this.error("Array definition not supported.", range);
                 }
     
                 if (Context.token.id === "=") {

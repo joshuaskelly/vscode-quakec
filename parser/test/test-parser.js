@@ -1,12 +1,26 @@
 var assert = require("assert");
 var qparse = require("../quakec-parser").parse;
+
 var parse = function(program) {
     return qparse({ program: program });
 };
 
 describe("Parser", function() {
     assert.noErrors = function(program) {
-        assert.equal(0, program.errors.length, "Parse errors occurred");
+        assert.equal(0, program.errors.length, "Parse errors occurred.");
+    };
+
+    assert.rangesEqual = function(actual, expected) {
+        assert.equal(actual.start.line, expected.start.line, "Starting line numbers should be equal.");
+        assert.equal(actual.start.character, expected.start.character, "Starting character numbers should be equal.");
+        assert.equal(actual.end.line, expected.end.line, "Ending line numbers should be equal.");
+        assert.equal(actual.start.character, expected.start.character, "Ending line numbers should be equal.");
+    };
+
+    assert.errorsEqual = function(actual, expected) {
+        assert.equal(actual.severity, expected.severity, "Error severities should be equal.");
+        assert.equal(actual.message, expected.message, "Error messages should be equal.");
+        assert.rangesEqual(actual.range, expected.range, "Error ranges should be equal.");
     };
 
     describe("Definitions", function() {
@@ -505,12 +519,47 @@ describe("Parser", function() {
                 onerror[0];
             };`;
             let actual = parse(program);
+            assert.equal(actual.errors.length, 1);
+
+            let expectedError = {
+                message: "Bracket operator not supported.",
+                range: {
+                    start: {
+                        line: 2,
+                        character: 23
+                    },
+                    end: {
+                        line: 2,
+                        character: 26
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
         });
         it("Should create an error for array definitions", function() {
             let program = `
             float() times[4];`;
             let actual = parse(program);
-            actual.getTypeString({line: 1, character: 33});
+            assert.equal(actual.errors.length, 1);
+
+            let expectedError = {
+                message: "Array definition not supported.",
+                range: {
+                    start: {
+                        line: 1,
+                        character: 25
+                    },
+                    end: {
+                        line: 1,
+                        character: 28
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
         });
     });
 });
