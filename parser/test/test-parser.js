@@ -42,6 +42,16 @@ describe("Parser", function() {
                 let program = `vector position;`;
                 let actual = parse(program);
                 assert.noErrors(actual);
+                let scope = actual.scope;
+                let xComponent = scope.find("position_x");
+                let yComponent = scope.find("position_y");
+                let zComponent = scope.find("position_z");
+                assert.equal(!!xComponent, true, "Accessor for x-component should be defined.");
+                assert.equal(!!yComponent, true, "Accessor for y-component should be defined.");
+                assert.equal(!!zComponent, true, "Accessor for z-component should be defined.");
+                assert.equal(xComponent.type.value, "float", "Accessor should be of type float.");
+                assert.equal(yComponent.type.value, "float", "Accessor should be of type float.");
+                assert.equal(zComponent.type.value, "float", "Accessor should be of type float.");
             });
             it("Should be able to init a vector", function() {
                 let program = `vector position ='1.0 0 -2.0';`;
@@ -136,6 +146,18 @@ describe("Parser", function() {
                 let program = `void(vector ang)	makevectors = #1;`;
                 let actual = parse(program);
                 assert.noErrors(actual);
+            });
+            it("Should not define accessors for functions of type vector", function() {
+                let program = `vector(entity target) lookAt;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+                let scope = actual.scope;
+                let xComponent = scope.find("lookAt_x");
+                let yComponent = scope.find("lookAt_y");
+                let zComponent = scope.find("lookAt_z");
+                assert.equal(xComponent.value, "(name)", "Accessor should not be defined.");
+                assert.equal(yComponent.value, "(name)", "Accessor should not be defined.");
+                assert.equal(zComponent.value, "(name)", "Accessor should not be defined.");
             });
         });
         describe("Frames", function() {

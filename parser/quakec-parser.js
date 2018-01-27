@@ -1112,10 +1112,10 @@ Define.immediate("{", function() {
  *    vector origin_y;
  *    vector origin_z;
  * 
- * @param {symbol} n - The symbol to add component definitions for
+ * @param {Symbol} n - The symbol to add component definitions for
  */
 var expandVectorDefinition = function(n) {
-    if (n.type && (n.type.value === "vector" || n.type.value === ".vector")) {
+    if (n.type && !n.type.params && (n.type.value === "vector" || n.type.value === ".vector")) {
         let value = n.type.value === "vector" ? "float" : ".float";
         
         // Define x-component
