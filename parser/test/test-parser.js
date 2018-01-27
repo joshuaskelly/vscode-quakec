@@ -506,7 +506,7 @@ describe("Parser", function() {
             };`;
             let actual = parse(program);
         });
-        it.only("Should create an error for array definitions", function() {
+        it("Should create an error for array definitions", function() {
             let program = `
             float() times[4];`;
             let actual = parse(program);
