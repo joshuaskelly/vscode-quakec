@@ -38,6 +38,11 @@ describe("Parser", function() {
                 let actual = parse(program);
                 assert.noErrors(actual);
             });
+            it.only("Should be able to init a negative float", function() {
+                let program = `float NEGATIVE = -1.0;`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+            });
             it("Should be able to define a vector", function() {
                 let program = `vector position;`;
                 let actual = parse(program);

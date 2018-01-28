@@ -49,7 +49,7 @@ var new_lexer = function() {
 
     lexer.addRule(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*\//, process_lexeme());
     lexer.addRule(/\/\/.*/, process_lexeme());
-    lexer.addRule(/-?[0-9]+(\.[0-9]+)?/, process_lexeme("float"));
+    lexer.addRule(/[0-9]+(\.[0-9]+)?/, process_lexeme("float"));
     lexer.addRule(/"([^"]|\\\S)*"/, process_lexeme("string"));
     lexer.addRule(/'\s*-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s*'/, process_lexeme("vector"));
     lexer.addRule(/#[0-9]+/, process_lexeme("builtin"));

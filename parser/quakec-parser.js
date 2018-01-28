@@ -1091,6 +1091,7 @@ Define.statement("{", function() {
     return statements;
 });
 
+Define.immediate("-");
 Define.immediate("(literal)");
 
 Define.immediate("{", function() {

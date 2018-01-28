@@ -16,7 +16,8 @@ import {
     TextDocument,
     TextDocumentPositionParams,
     Diagnostic,
-    DiagnosticSeverity
+    DiagnosticSeverity,
+    PublishDiagnosticsParams
 } from 'vscode-languageserver';
 
 import { 
@@ -171,6 +172,22 @@ export class SourceDocumentManager {
         }
         
         return diagnostics;
+    }
+
+    public getDiagnosticsAll(): PublishDiagnosticsParams[] {
+        let publishDiagnosticsParams: PublishDiagnosticsParams[] = [];
+        for (let uri in this.documents) {
+            let document: TextDocument = this.getDocument(uri);
+            let diagnostics: Diagnostic[] = this.getDiagnostics(document);
+            publishDiagnosticsParams.push(
+                {
+                    uri: this.toVSCodeUri(uri),
+                    diagnostics: diagnostics
+                }
+            );
+        }
+
+        return publishDiagnosticsParams;
     }
 
     private getProgram(uri: string): Program {

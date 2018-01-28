@@ -45,14 +45,12 @@ connection.onInitialize((params): InitializeResult => {
 
 documents.onDidChangeContent((change) => {
 	documentManager.updateDocument(change.document);
-	let diagnostics: Diagnostic[] = documentManager.getDiagnostics(change.document);
+	
+	let diagnostics: PublishDiagnosticsParams[] = documentManager.getDiagnosticsAll();
 
-	let d: PublishDiagnosticsParams = {
-		uri: change.document.uri,
-		diagnostics: diagnostics
-	};
-
-	connection.sendDiagnostics(d);
+	for (let d of diagnostics) {
+		connection.sendDiagnostics(d);
+	}
 });
 
 interface Settings {
