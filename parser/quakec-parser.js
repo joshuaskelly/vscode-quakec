@@ -470,9 +470,8 @@ class Define {
 
             this.tyd();
     
-            name = Context.token;
-    
             while (true) {
+                name = Context.token;
                 if (name.arity !== "name") {
                     name.error("Expected a new variable name.");
                 }
@@ -1021,7 +1020,6 @@ Define.symbol("$");
 Define.symbol("else");
 
 Define.infix("+", 50);
-Define.infix("-", 50);
 Define.infix("*", 60);
 Define.infix("/", 60);
 Define.infix("==", 40);
@@ -1030,6 +1028,21 @@ Define.infix("<", 40);
 Define.infix("<=", 40);
 Define.infix(">", 40);
 Define.infix(">=", 40);
+Define.infix("-", 50, function(left) {
+    this.first = left;
+    this.second = Parse.expression(50);
+    this.arity = "binary";
+
+    if (this.second.arity === "literal") {
+        let s = this.range.end;
+        let e = this.second.range.start;
+        if (s.line === e.line && e.character === s.character) {
+            this.error("Missing whitespace for '-' operator.");
+        }
+    }
+
+    return this;
+});
 
 Define.infix(".", 80, function (left) {
     this.first = left;
@@ -1295,8 +1308,8 @@ Define.infix("(", 80, function(left) {
 });
 
 Define.statement("local", function() {
-    if (Context.token.ded) {
-        this.first = Parse.definition();
+    if (Context.token.std) {
+        this.first = Parse.statement();
     }
     this.arity = "statement";
 

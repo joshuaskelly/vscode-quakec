@@ -62,18 +62,28 @@ describe("Lexer", function() {
             });
             it("Should handle negative floats", function() {
                 var program = `-1.234`;
-                var expected = {
-                    type: "float",
-                    value: "-1.234",
-                    position: {
-                        line: 0,
-                        character: 0
+                var expected = [
+                    {
+                        type: "operator",
+                        value: "-",
+                        position: {
+                            line: 0,
+                            character: 0
+                        }
+                    },
+                    {
+                        type: "float",
+                        value: "1.234",
+                        position: {
+                            line: 0,
+                            character: 1
+                        }
                     }
-                };
+                ];
                 lexer.setInput(program);
-                var actual = lexer.lex();
+                var actual = all(program);
 
-                assert.tokensEqual(expected, actual);
+                assert.tokenArraysEqual(expected, actual);
             });
             it("Should handle int style floats", function() {
                 var program = `1`;
@@ -92,18 +102,28 @@ describe("Lexer", function() {
             });
             it("Should handle negative int style floats", function() {
                 var program = `-10`;
-                var expected = {
-                    type: "float",
-                    value: "-10",
-                    position: {
-                        line: 0,
-                        character: 0
+                var expected = [
+                    {
+                        type: "operator",
+                        value: "-",
+                        position: {
+                            line: 0,
+                            character: 0
+                        }
+                    },
+                    {
+                        type: "float",
+                        value: "10",
+                        position: {
+                            line: 0,
+                            character: 1
+                        }
                     }
-                };
+                ];
                 lexer.setInput(program);
-                var actual = lexer.lex();
+                var actual = all(program);
 
-                assert.tokensEqual(expected, actual);
+                assert.tokenArraysEqual(expected, actual);
             });
         });
         describe("Vectors", function() {
@@ -193,7 +213,7 @@ describe("Lexer", function() {
                         }
                     }
                 ];
-                var actual = all(program)
+                var actual = all(program);
 
                 assert.tokenArraysEqual(expected, actual);
             });

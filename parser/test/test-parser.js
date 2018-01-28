@@ -38,7 +38,7 @@ describe("Parser", function() {
                 let actual = parse(program);
                 assert.noErrors(actual);
             });
-            it.only("Should be able to init a negative float", function() {
+            it("Should be able to init a negative float", function() {
                 let program = `float NEGATIVE = -1.0;`;
                 let actual = parse(program);
                 assert.noErrors(actual);
@@ -345,6 +345,14 @@ describe("Parser", function() {
                 let actual = parse(program);
                 assert.noErrors(actual);
             });
+            it("Should handle defining multiple local variables", function() {
+                let program = `
+                void() test = {
+                    local float time, counter;
+                };`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+            });
             it("Should handle initializing local variables", function() {
                 let program = `
                 void() test = {
@@ -587,6 +595,14 @@ describe("Parser", function() {
             };
 
             assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error subtraction without whitespace.", function() {
+            let program = `
+            void() test = {
+                local float zero = 1-1;
+            };`;
+            let actual = parse(program);
+            assert.equal(actual.errors.length, 1);
         });
     });
 });
