@@ -41,7 +41,14 @@ var Context = {
      * 
      * @type {Diagnostic[]} errors
      */
-    errors: []
+    errors: [],
+
+    /**
+     * A string that defines the parser's behavior for handling various language constructs.
+     * 
+     * @type {string} language
+     */
+    language: "qcc"
 };
 
 class Symbol {
@@ -108,7 +115,7 @@ class Symbol {
             {
                 range: range,
                 severity: severity,
-                message: message
+                message: `[${Context.language}] ${message}`
             }
         );
     }
@@ -1033,11 +1040,13 @@ Define.infix("-", 50, function(left) {
     this.second = Parse.expression(50);
     this.arity = "binary";
 
-    if (this.second.arity === "literal") {
-        let s = this.range.end;
-        let e = this.second.range.start;
-        if (s.line === e.line && e.character === s.character) {
-            this.error("Missing whitespace for '-' operator.");
+    if (Context.language === "qcc") {
+        if (this.second.arity === "literal") {
+            let s = this.range.end;
+            let e = this.second.range.start;
+            if (s.line === e.line && e.character === s.character) {
+                this.error("Missing whitespace for '-' operator.");
+            }
         }
     }
 
@@ -1324,7 +1333,8 @@ var parse = function(programInfo) {
         symbol_table: Object.create(Context.symbol_table),
         scope: null,
         symbols: [],
-        errors: []
+        errors: [],
+        language: programInfo.language
     };
 
     lexer.setInput(programInfo.program);

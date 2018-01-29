@@ -2,7 +2,8 @@ declare module "quakec-parser" {
     export type ParseInfo = {
         program: string,
         uri: string,
-        parentScope?: any
+        parentScope?: any,
+        language: string
     };
 
     export type Position = {

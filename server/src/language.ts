@@ -43,6 +43,7 @@ export class SourceDocumentManager {
     private programs: {[uri: string]: ProgramCacheItem};
     private sourceOrder: string[];
     private documentsParsed: number;
+    private language: string;
 
     /**
      * Create a SourceDocumentManager
@@ -53,6 +54,7 @@ export class SourceDocumentManager {
         this.documents = {};
         this.programs = {};
         this.sourceOrder = [];
+        this.language = "qcc";
         this.loadDocuments();
     }
 
@@ -188,6 +190,14 @@ export class SourceDocumentManager {
         }
 
         return publishDiagnosticsParams;
+    }
+
+    public setLanguage(language: string): void {
+        if (this.language !== language) {
+            this.language = language || "qcc";
+            this.invalidateProgramCache();
+            this.validateProgramCache();
+        }
     }
 
     private getProgram(uri: string): Program {
@@ -327,7 +337,8 @@ export class SourceDocumentManager {
         let parseInfo: ParseInfo = {
             program: document.getText(),
             uri: uri,
-            parentScope: scope
+            parentScope: scope,
+            language: this.language
         };
         let program: Program = parser.parse(parseInfo);
         programCacheItem = {

@@ -26,11 +26,11 @@ export function activate(context: ExtensionContext) {
 	let clientOptions: LanguageClientOptions = {
 		documentSelector: [{scheme: 'file', language: 'quakec'}],
 		synchronize: {
-			configurationSection: 'quakecConfig',
+			configurationSection: 'quakec',
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
 		}
 	}
 	
-	let disposable = new LanguageClient('quakecConfig', 'QuakeC Language Server', serverOptions, clientOptions).start();
+	let disposable = new LanguageClient('quakec', 'QuakeC Language Server', serverOptions, clientOptions).start();
 	context.subscriptions.push(disposable);
 }

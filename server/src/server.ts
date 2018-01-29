@@ -45,23 +45,34 @@ connection.onInitialize((params): InitializeResult => {
 
 documents.onDidChangeContent((change) => {
 	documentManager.updateDocument(change.document);
-	
+	sendDiagnostics();
+});
+
+interface Settings {
+	quakec: QuakeCSettings;
+}
+
+interface QuakeCSettings {
+	maxNumberOfProblems: number;
+	language: string;
+}
+
+let language: string;
+
+let sendDiagnostics = function(): void {
 	let diagnostics: PublishDiagnosticsParams[] = documentManager.getDiagnosticsAll();
 
 	for (let d of diagnostics) {
 		connection.sendDiagnostics(d);
 	}
+};
+
+connection.onDidChangeConfiguration((change) => {
+	let settings = <Settings>change.settings;
+	language = settings.quakec.language || "qcc";
+	documentManager.setLanguage(language);
+	sendDiagnostics();
 });
-
-interface Settings {
-	quakecConfig: QuakeCSettings;
-}
-
-interface QuakeCSettings {
-	maxNumberOfProblems: number;
-}
-
-let maxNumberOfProblems: number;
 
 connection.onDefinition((request:TextDocumentPositionParams):Location => {
 	return documentManager.getDefinition(request);

@@ -51,6 +51,12 @@
 					"type": "number",
 					"default": 100,
 					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"quakec.language": {
+					"scope": "resource",
+					"type": "string",
+					"default": "qcc",
+					"description": "Controls parser support for various language features."
 				}
 			}
 		}
