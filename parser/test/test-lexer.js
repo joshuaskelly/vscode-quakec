@@ -601,17 +601,17 @@ describe("Lexer", function() {
                 value: "var",
                 position: {
                     line: 2,
-                    character: 12    
+                    character: 12
                 }
             };
             lexer.setInput(program);
             var actual = lexer.lex();
-            
+
             assert.tokensEqual(expected, actual);
         });
         it("Should handle multiline comments", function() {
             var program = `
-            /* 
+            /*
              * This is a comment!
              */
             var i = 0;
@@ -622,12 +622,12 @@ describe("Lexer", function() {
                 value: "var",
                 position: {
                     line: 4,
-                    character: 12    
+                    character: 12
                 }
             };
             lexer.setInput(program);
             var actual = lexer.lex();
-            
+
             assert.tokensEqual(expected, actual);
         });
     });

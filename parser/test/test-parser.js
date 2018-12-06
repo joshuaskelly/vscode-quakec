@@ -171,6 +171,11 @@ describe("Parser", function() {
                 let actual = parse(program);
                 assert.noErrors(actual);
             });
+            it("Should be able to define a frame with optional value", function() {
+                let program = `$frame frame1 1.0`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+            });
             it("Should be able to define a frame function", function() {
                 let program = `void() framename = [$frame1, nextthink] {};`;
                 let actual = parse(program);
@@ -178,6 +183,16 @@ describe("Parser", function() {
             });
             it("Should be able to define a frame function with float literal", function() {
                 let program = `void() framename = [0, nextthink] {};`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+            });
+            it("Should be able to start frame groups", function() {
+                let program = `$framegroupstart`;
+                let actual = parse(program);
+                assert.noErrors(actual);
+            });
+            it("Should be able to end frame groups", function() {
+                let program = `$framegroupend`;
                 let actual = parse(program);
                 assert.noErrors(actual);
             });
@@ -557,7 +572,7 @@ describe("Parser", function() {
             assert.equal(actual.errors.length, 1);
 
             let expectedError = {
-                message: "Bracket operator not supported.",
+                message: "[qcc] Bracket operator not supported.",
                 range: {
                     start: {
                         line: 2,
@@ -580,7 +595,7 @@ describe("Parser", function() {
             assert.equal(actual.errors.length, 1);
 
             let expectedError = {
-                message: "Array definition not supported.",
+                message: "[qcc] Array definition not supported.",
                 range: {
                     start: {
                         line: 1,
@@ -603,6 +618,23 @@ describe("Parser", function() {
             };`;
             let actual = parse(program);
             assert.equal(actual.errors.length, 1);
+
+            let expectedError = {
+                message: "[qcc] Missing whitespace for '-' operator.",
+                range: {
+                    start: {
+                        line: 2,
+                        character: 36
+                    },
+                    end: {
+                        line: 2,
+                        character: 37
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
         });
     });
 });
