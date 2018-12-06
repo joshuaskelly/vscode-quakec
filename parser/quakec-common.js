@@ -4,9 +4,9 @@
 class Position {
     /**
      * Creates a position.
-     * 
+     *
      * @param {number} line
-     * @param {number} character 
+     * @param {number} character
      */
     constructor(line, character) {
         /**
@@ -27,7 +27,7 @@ class Position {
 class Range {
     /**
      * Creates a range with the given positions.
-     * 
+     *
      * @param {Position} start The range's start position
      * @param {Position} end The range's end position
      */
@@ -38,9 +38,9 @@ class Range {
 
     /**
      * Checks for containment in the range.
-     * 
-     * @param {Position} position 
-     * 
+     *
+     * @param {Position} position
+     *
      * @returns {boolean} True if the given position is contained within the range.
      */
     contains(position) {

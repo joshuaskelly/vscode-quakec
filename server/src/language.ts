@@ -20,8 +20,8 @@ import {
     PublishDiagnosticsParams
 } from 'vscode-languageserver';
 
-import { 
-    Program, Scope, ParseInfo, Error 
+import {
+    Program, Scope, ParseInfo, Error
 } from "quakec-parser";
 import { relative } from "path";
 
@@ -82,12 +82,12 @@ export class SourceDocumentManager {
 
         // Update if not currently tracked or newer version
         if (!documentCacheItem || documentCacheItem.version < document.version) {
-            
+
             documentCacheItem = {
                 version: document.version,
                 document: document
             };
-            
+
             this.setDocumentCacheItem(uri, documentCacheItem);
             this.invalidateProgram(uri);
             this.validateProgramCache();
@@ -124,7 +124,7 @@ export class SourceDocumentManager {
 
         let location: Location = program.getDefinition(request.position);
         location.uri = this.toVSCodeUri(location.uri);
-        
+
         return location;
     }
 
@@ -172,7 +172,7 @@ export class SourceDocumentManager {
 
             diagnostics.push(diagnostic);
         }
-        
+
         return diagnostics;
     }
 
@@ -312,7 +312,7 @@ export class SourceDocumentManager {
 
             for (let i = 0; i < this.sourceOrder.length; i++) {
                 let uri: string = this.sourceOrder[i];
-                
+
                 console.log(`   Validating ${path.win32.basename(uri)}`);
                 var program: Program = this.validateProgram(uri, scope);
 
@@ -386,7 +386,7 @@ export class SourceDocumentManager {
         }
 
         let program: Program = programCacheItem.program;
-        
+
         if (!program) {
             return;
         }

@@ -5,14 +5,14 @@ import * as path from "path";
 import * as parser from "quakec-parser";
 
 import {
-	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument, 
-	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem, 
+	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument,
+	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem,
 	CompletionItemKind, Position, Location, Hover, ReferenceParams, PublishDiagnosticsParams
 } from 'vscode-languageserver';
 
-import { 
-	ParseInfo, 
-	Program 
+import {
+	ParseInfo,
+	Program
 } from "quakec-parser";
 
 import {
@@ -32,7 +32,7 @@ connection.onInitialize((params): InitializeResult => {
 	// Use this to build a listing of project directory.
 	workspaceRoot = params.rootPath;
 	documentManager = new SourceDocumentManager(workspaceRoot);
-	
+
 	return {
 		capabilities: {
 			textDocumentSync: documents.syncKind,
