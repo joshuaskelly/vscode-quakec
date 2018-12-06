@@ -1396,7 +1396,7 @@ class Program {
     getTypeString(position) {
         let definition = this.getSymbolDefinition(position);
 
-        if (!definition) {
+        if (!definition || !definition.type) {
             return null;
         }
 
