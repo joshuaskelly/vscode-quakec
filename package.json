@@ -1,16 +1,16 @@
 {
 	"name": "vscode-quakec",
-	"description": "A language server for QuakeC",
+	"description": "A QuakeC Language Extension for VS Code",
 	"author": "Joshua Skelton",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"publisher": "Joshua Skelton",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/joshuaskelly/vscode-quakec"
 	},
 	"scripts": {
-		"postinstall": "cd server && npm install && cd ../client && npm install && cd ..",
+		"postinstall": "cd parser && npm install && cd ../server && npm install && cd ../client && npm install && cd ..",
 		"compile": "tsc -p client/tsconfig.json && cd server && npm run installServer && cd .. && tsc -p server/tsconfig.json",
 		"compile:client": "tsc -p client/tsconfig.json",
 		"watch:client": "tsc -w -p client/tsconfig.json",

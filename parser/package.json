@@ -6,9 +6,9 @@
   "license": "MIT",
   "main": "quakec-parser.js",
   "repository": {
-		"type": "git",
-		"url": "https://github.com/JoshuaSkelly/vscode-quakec"
-	},
+    "type": "git",
+    "url": "https://github.com/JoshuaSkelly/vscode-quakec"
+  },
   "devDependencies": {
     "@types/mocha": "^2.2.46",
     "@types/node": "^9.3.0",
