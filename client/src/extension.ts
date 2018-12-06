@@ -16,6 +16,8 @@ import {
 
 export function activate(context: ExtensionContext) {
 	let serverModule = context.asAbsolutePath(path.join('server', 'server.js'));
+
+	//let debugOptions = { execArgv: ["--nolazy", "--inspect-brk=6009"] };
 	let debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };
 	
 	let serverOptions: ServerOptions = {

@@ -90,7 +90,7 @@ export class SourceDocumentManager {
             
             this.setDocumentCacheItem(uri, documentCacheItem);
             this.invalidateProgram(uri);
-            this.validateProgramCache(uri);
+            this.validateProgramCache();
         }
     }
 
@@ -220,14 +220,33 @@ export class SourceDocumentManager {
      */
     private loadDocuments(): void {
         this.documents = {};
-        let files = fs.readdirSync(this.workspaceRoot);
 
-        for (let file of files) {
-            if (!this.isSourceDocument(file) && !this.isProjectDocument(file)) {
+        let walk = function(dir: string): string[] {
+            let results:string[] = [];
+            let files = fs.readdirSync(dir);
+
+            for (let file of files) {
+                let uri: string = path.join(dir, file);
+                let stat = fs.statSync(uri);
+
+                if (stat.isDirectory()) {
+                    results = results.concat(walk(uri));
+                }
+                else {
+                    results.push(uri);
+                }
+            }
+
+            return results;
+        }
+
+        let uris:string[] = walk(this.workspaceRoot);
+
+        for (let uri of uris) {
+            if (!this.isSourceDocument(uri) && !this.isProjectDocument(uri)) {
                 continue;
             }
 
-            let uri: string = path.join(this.workspaceRoot, file);
             let document: TextDocument = this.loadDocument(uri);
 
             if (this.isProjectDocument(uri)) {
@@ -392,7 +411,7 @@ export class SourceDocumentManager {
         let self = this;
         this.sourceOrder = this.sourceOrder.map(
             function(sourceDoc: string) {
-                return self.workspacePath(sourceDoc);
+                return path.join(path.dirname(progsSrcDocument.uri), sourceDoc);
             });
     }
 
