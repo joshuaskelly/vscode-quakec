@@ -1,25 +1,12 @@
 'use strict';
 
-import * as fs from "fs";
-import * as path from "path";
-import * as parser from "quakec-parser";
-
 import {
-	IPCMessageReader, IPCMessageWriter, createConnection, IConnection, TextDocuments, TextDocument,
-	Diagnostic, DiagnosticSeverity, InitializeResult, TextDocumentPositionParams, CompletionItem,
-	CompletionItemKind, Position, Location, Hover, ReferenceParams, PublishDiagnosticsParams
+	IPCMessageReader, IPCMessageWriter, createConnection, IConnection,
+	TextDocuments, InitializeResult, TextDocumentPositionParams,
+	Location, Hover, ReferenceParams, PublishDiagnosticsParams
 } from 'vscode-languageserver';
 
-import {
-	ParseInfo,
-	Program
-} from "quakec-parser";
-
-import {
-	SourceDocumentManager
-} from "./language";
-import { connect } from "tls";
-import { request } from "http";
+import { SourceDocumentManager } from "./language";
 
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 let documents: TextDocuments = new TextDocuments();
