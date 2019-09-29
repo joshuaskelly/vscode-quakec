@@ -3,8 +3,12 @@
 	"description": "A QuakeC Language Extension for VS Code",
 	"author": "Joshua Skelton",
 	"license": "MIT",
-	"version": "0.2.0",
-	"publisher": "Joshua Skelton",
+	"engines": {
+		"node": "*",
+		"vscode": "^1.22.0"
+	},
+	"version": "0.2.1",
+	"publisher": "joshuaskelly",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/joshuaskelly/vscode-quakec"
