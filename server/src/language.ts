@@ -352,6 +352,10 @@ export class SourceDocumentManager {
             return programCacheItem.program;
         }
 
+        if (programCacheItem && programCacheItem.program && programCacheItem.program.scope) {
+            scope = scope || programCacheItem.program.scope.parent;
+        }
+
         let document: TextDocument = this.getDocument(uri);
         let parseInfo: ParseInfo = {
             program: document.getText(),
@@ -393,6 +397,9 @@ export class SourceDocumentManager {
 
         programCacheItem.isValid = false;
         this.setProgramCacheItem(uri, programCacheItem);
+
+        // Remove references
+        program.invalidate();
 
         if (invalidateDownstream && this.sourceOrder.includes(uri)) {
             for (var i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {

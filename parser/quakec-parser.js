@@ -1521,6 +1521,23 @@ class Program {
     getErrors() {
         return this.errors;
     }
+
+    invalidate() {
+        const nameSymbols = this.symbols.filter(symbol => symbol.arity === "name");
+
+        nameSymbols.forEach((symbol) => {
+            let definition = this.getSymbolDefinition(symbol.range.start);
+
+            if (!definition || !definition.refs) {
+                return;
+            }
+
+            let index = definition.refs.indexOf(symbol);
+            if (index > -1) {
+                definition.refs.splice(index, 1);
+            }
+        });
+    }
 }
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {

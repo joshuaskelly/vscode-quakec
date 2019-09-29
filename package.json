@@ -3,7 +3,7 @@
 	"description": "A QuakeC Language Extension for VS Code",
 	"author": "Joshua Skelton",
 	"license": "MIT",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"publisher": "Joshua Skelton",
 	"repository": {
 		"type": "git",

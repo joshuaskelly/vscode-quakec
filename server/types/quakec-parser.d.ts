@@ -28,7 +28,8 @@ declare module "quakec-parser" {
 
     export type Scope = {
         uri: string,
-        find: (input: string) => Symbol;
+        find: (input: string) => Symbol,
+        parent: Scope
     };
 
     export type Error = {
@@ -44,7 +45,8 @@ declare module "quakec-parser" {
         getDefinition: (position: Position) => Location,
         getTypeString: (position: Position) => string,
         getReferences: (position: Position, includeDeclaration: boolean) => Location[],
-        getErrors: () => Error[]
+        getErrors: () => Error[],
+        invalidate: () => null
     };
 
     export function parse(input:ParseInfo): Program;
