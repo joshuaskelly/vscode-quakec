@@ -1,11 +1,12 @@
 {
-	"name": "vscode-quakec",
+	"name": "quakec",
+	"displayName": "QuakeC",
 	"description": "A QuakeC Language Extension for VS Code",
 	"author": "Joshua Skelton",
 	"license": "MIT",
 	"engines": {
 		"node": "*",
-		"vscode": "^1.22.0"
+		"vscode": "^1.39.0"
 	},
 	"version": "0.2.1",
 	"publisher": "joshuaskelly",
