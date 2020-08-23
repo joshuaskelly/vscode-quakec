@@ -15,7 +15,7 @@ import {
 } from 'vscode-languageclient';
 
 export function activate(context: ExtensionContext) {
-	let serverModule = context.asAbsolutePath(path.join('server', 'server.js'));
+	let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
 
 	//let debugOptions = { execArgv: ["--nolazy", "--inspect-brk=6009"] };
 	let debugOptions = { execArgv: ["--nolazy", "--inspect=6009"] };

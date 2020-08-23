@@ -3,13 +3,17 @@
 import {
 	IPCMessageReader, IPCMessageWriter, createConnection, IConnection,
 	TextDocuments, InitializeResult, TextDocumentPositionParams,
-	Location, Hover, ReferenceParams, PublishDiagnosticsParams
+	Location, Hover, ReferenceParams, PublishDiagnosticsParams, TextDocumentSyncKind
 } from 'vscode-languageserver';
+
+import {
+	TextDocument
+} from 'vscode-languageserver-textdocument';
 
 import { SourceDocumentManager } from "./language";
 
 let connection: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-let documents: TextDocuments = new TextDocuments();
+let documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 documents.listen(connection);
 
 let documentManager: SourceDocumentManager;
@@ -22,7 +26,7 @@ connection.onInitialize((params): InitializeResult => {
 
 	return {
 		capabilities: {
-			textDocumentSync: documents.syncKind,
+			textDocumentSync: TextDocumentSyncKind.Full,
 			definitionProvider: true,
 			hoverProvider: true,
 			referencesProvider: true
