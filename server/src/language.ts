@@ -260,7 +260,7 @@ export class SourceDocumentManager {
         let uris:string[] = [];
 
         if (this.workspaceRoot) {
-            uris = walk(this.workspaceRoot);
+            uris = walk(this.fromVSCodeUri(this.workspaceRoot));
         }
 
         for (let uri of uris) {
