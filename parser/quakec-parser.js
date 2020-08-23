@@ -1343,10 +1343,26 @@ var parse = function(programInfo) {
 
     lexer.setInput(programInfo.program);
     new Scope(programInfo.uri, programInfo.parentScope);
-    Parse.advance();
-    let ast = Parse.definitions();
-    let scope = Context.scope;
-    Context.scope.pop()
+
+    let ast, scope;
+
+    try
+    {
+        Parse.advance();
+        ast = Parse.definitions();
+        scope = Context.scope;
+        Context.scope.pop();
+    }
+    catch (e)
+    {
+        Context.errors.push(
+            {
+                range: Context.token.range,
+                severity: 1,
+                message: `[${Context.language}] fatal error: ${e.toString()}`
+            }
+        );
+    }
 
     return new Program(ast, scope, Context.symbols, Context.errors);
 };
