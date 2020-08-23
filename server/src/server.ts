@@ -14,10 +14,10 @@ documents.listen(connection);
 
 let documentManager: SourceDocumentManager;
 
-let workspaceRoot: string;
+let workspaceRoot: string | null;
 connection.onInitialize((params): InitializeResult => {
 	// Use this to build a listing of project directory.
-	workspaceRoot = params.rootPath;
+	workspaceRoot = params.rootUri;
 	documentManager = new SourceDocumentManager(workspaceRoot);
 
 	return {

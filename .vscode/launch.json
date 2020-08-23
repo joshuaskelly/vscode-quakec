@@ -1,41 +1,32 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
 {
 	"version": "0.2.0",
-	// List of configurations. Add new configurations or edit existing ones.
 	"configurations": [
 		{
-			"name": "Launch Client",
 			"type": "extensionHost",
 			"request": "launch",
+			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceRoot}/client"
-			],
-			"stopOnEntry": false,
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceRoot}/client/out/**/*.js"
-			],
-			"preLaunchTask": "watch:client"
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+			"preLaunchTask": {
+				"type": "npm",
+				"script": "watch"
+			}
 		},
 		{
-			"name": "Attach to Server",
 			"type": "node",
 			"request": "attach",
+			"name": "Attach to Server",
 			"port": 6009,
-			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceRoot}/client/server/**/*.js"
-			],
-			"preLaunchTask": "watch:server"
-		},
+			"restart": true,
+			"outFiles": ["${workspaceRoot}/server/out/**/*.js"]
+		}
+	],
+	"compounds": [
 		{
-            "type": "node",
-            "request": "launch",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "name": "Run Tests",
-            "stopOnEntry": false,
-            "args": ["${workspaceRoot}/*/test/**/*.js", "--no-timeouts"],
-            "cwd": "${workspaceRoot}"
-        }
+			"name": "Client + Server",
+			"configurations": ["Launch Client", "Attach to Server"]
+		}
 	]
 }

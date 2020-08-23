@@ -27,18 +27,29 @@ import { relative } from "path";
 
 class DocumentCacheItem {
     version: number;
-    document: TextDocument;
+    document: TextDocument | null;
+
+    constructor() {
+        this.version = -1;
+        this.document = null;
+    }
 };
 
 class ProgramCacheItem {
     uri: string;
     isValid: boolean;
-    program: Program;
+    program: Program | null;
+
+    constructor() {
+        this.uri = "";
+        this.isValid = false;
+        this.program = null;
+    }
 };
 
 /* Class for working with source documents. */
 export class SourceDocumentManager {
-    private workspaceRoot: string;
+    private workspaceRoot: string | null;
     private documents: {[uri: string]: DocumentCacheItem};
     private programs: {[uri: string]: ProgramCacheItem};
     private sourceOrder: string[];
@@ -49,11 +60,12 @@ export class SourceDocumentManager {
      * Create a SourceDocumentManager
      * @param {string} workspaceRoot - A path to the workspace root directory.
      */
-    constructor(root: string) {
+    constructor(root: string | null) {
         this.workspaceRoot = root;
         this.documents = {};
         this.programs = {};
         this.sourceOrder = [];
+        this.documentsParsed = 0;
         this.language = "qcc";
         this.loadDocuments();
     }
@@ -62,7 +74,7 @@ export class SourceDocumentManager {
      * Gets the source document for a given uri
      * @param uri - Document uri
      */
-    public getDocument(uri: string): TextDocument {
+    public getDocument(uri: string): TextDocument | null {
         let documentCacheItem: DocumentCacheItem = this.getDocumentCacheItem(uri);
 
         if (!documentCacheItem) {
@@ -95,16 +107,16 @@ export class SourceDocumentManager {
     }
 
     public getHover(request: TextDocumentPositionParams) : Hover {
-        let program: Program = this.getProgram(request.textDocument.uri);
+        let program: Program | null = this.getProgram(request.textDocument.uri);
 
         if (!program) {
-            return null;
+            return { contents: "" };
         }
 
         let type: string = program.getTypeString(request.position);
 
         if (!type) {
-            return null;
+            return { contents: "" };
         }
 
         return {
@@ -116,10 +128,16 @@ export class SourceDocumentManager {
     }
 
     public getDefinition(request: TextDocumentPositionParams): Location {
-        let program: Program = this.getProgram(request.textDocument.uri);
+        let program: Program | null = this.getProgram(request.textDocument.uri);
 
         if (!program) {
-            return null;
+            return {
+                uri: "",
+                range: {
+                    start: { line: -1, character: -1},
+                    end: { line: -1, character: -1}
+                }
+            };
         }
 
         let location: Location = program.getDefinition(request.position);
@@ -130,7 +148,7 @@ export class SourceDocumentManager {
 
     public getReferences(request: ReferenceParams): Location[] {
         this.validateProgramCache();
-        let program: Program = this.getProgram(request.textDocument.uri);
+        let program: Program | null = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return [];
@@ -146,7 +164,7 @@ export class SourceDocumentManager {
     }
 
     public getDiagnostics(request: TextDocument): Diagnostic[] {
-        let program: Program = this.getProgram(request.uri);
+        let program: Program | null = this.getProgram(request.uri);
 
         if (!program) {
             return [];
@@ -156,17 +174,9 @@ export class SourceDocumentManager {
         let errors: Error[] = program.getErrors();
 
         for (let error of errors) {
-            let severity: DiagnosticSeverity = [
-                null,
-                DiagnosticSeverity.Error,
-                DiagnosticSeverity.Warning,
-                DiagnosticSeverity.Information,
-                DiagnosticSeverity.Hint
-            ][error.severity];
-
             let diagnostic: Diagnostic = {
                 range: error.range,
-                severity: severity,
+                severity: error.severity as DiagnosticSeverity,
                 message: error.message
             };
 
@@ -179,7 +189,14 @@ export class SourceDocumentManager {
     public getDiagnosticsAll(): PublishDiagnosticsParams[] {
         let publishDiagnosticsParams: PublishDiagnosticsParams[] = [];
         for (let uri in this.documents) {
-            let document: TextDocument = this.getDocument(uri);
+            let document = this.getDocument(uri);
+
+            if (document == null) {
+                continue;
+            }
+
+            document = document as TextDocument;
+
             let diagnostics: Diagnostic[] = this.getDiagnostics(document);
             publishDiagnosticsParams.push(
                 {
@@ -200,7 +217,7 @@ export class SourceDocumentManager {
         }
     }
 
-    private getProgram(uri: string): Program {
+    private getProgram(uri: string): Program | null {
         uri = this.fromVSCodeUri(uri);
         let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
@@ -209,7 +226,7 @@ export class SourceDocumentManager {
         }
 
         if (!programCacheItem.isValid) {
-            this.validateProgram(uri);
+            this.validateProgram(uri, null);
         }
 
         return programCacheItem.program;
@@ -240,14 +257,22 @@ export class SourceDocumentManager {
             return results;
         }
 
-        let uris:string[] = walk(this.workspaceRoot);
+        let uris:string[] = [];
+
+        if (this.workspaceRoot) {
+            uris = walk(this.workspaceRoot);
+        }
 
         for (let uri of uris) {
             if (!this.isSourceDocument(uri) && !this.isProjectDocument(uri)) {
                 continue;
             }
 
-            let document: TextDocument = this.loadDocument(uri);
+            let document: TextDocument | null = this.loadDocument(uri);
+
+            if (!document) {
+                return;
+            }
 
             if (this.isProjectDocument(uri)) {
                 this.buildSourceOrder(document);
@@ -257,8 +282,13 @@ export class SourceDocumentManager {
         this.validateProgramCache();
     }
 
-    private loadDocument(uri: string): TextDocument {
-        let document = this.readDocument(uri);
+    private loadDocument(uri: string): TextDocument | null {
+        let document: TextDocument | null = this.readDocument(uri);
+
+        if (!document) {
+            return null;
+        }
+
         let documentCacheItem = {
             version: document.version,
             document: document
@@ -286,7 +316,7 @@ export class SourceDocumentManager {
         return path.win32.basename(uri) === "progs.src";
     }
 
-    private readDocument(uri: string): TextDocument {
+    private readDocument(uri: string): TextDocument | null {
         if (!fs.existsSync(uri)) {
             return null;
         }
@@ -308,13 +338,13 @@ export class SourceDocumentManager {
         let done: boolean = false;
 
         if (this.sourceOrder) {
-            let scope: Scope = null;
+            let scope: Scope | null = null;
 
             for (let i = 0; i < this.sourceOrder.length; i++) {
                 let uri: string = this.sourceOrder[i];
 
                 console.log(`   Validating ${path.win32.basename(uri)}`);
-                var program: Program = this.validateProgram(uri, scope);
+                var program: Program | null = this.validateProgram(uri, scope);
 
                 if (program) {
                     scope = program.scope;
@@ -329,7 +359,7 @@ export class SourceDocumentManager {
 
         if (!done) {
             for (let uri in this.programs) {
-                this.validateProgram(uri);
+                this.validateProgram(uri, null);
 
                 if (uri === stopAtUri) {
                     return;
@@ -341,7 +371,7 @@ export class SourceDocumentManager {
         console.log(`Parsed ${this.documentsParsed} documents in ${elapsed} milliseconds`);
     };
 
-    private validateProgram(uri: string, scope?: Scope): Program {
+    private validateProgram(uri: string, scope: Scope | null): Program | null {
         let programCacheItem: ProgramCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
@@ -356,7 +386,12 @@ export class SourceDocumentManager {
             scope = scope || programCacheItem.program.scope.parent;
         }
 
-        let document: TextDocument = this.getDocument(uri);
+        let document: TextDocument | null = this.getDocument(uri);
+
+        if (!document) {
+            return null;
+        }
+
         let parseInfo: ParseInfo = {
             program: document.getText(),
             uri: uri,
@@ -389,7 +424,7 @@ export class SourceDocumentManager {
             return;
         }
 
-        let program: Program = programCacheItem.program;
+        let program: Program | null = programCacheItem.program;
 
         if (!program) {
             return;
@@ -420,10 +455,6 @@ export class SourceDocumentManager {
             function(sourceDoc: string) {
                 return path.join(path.dirname(progsSrcDocument.uri), sourceDoc);
             });
-    }
-
-    private workspacePath(relativePath: string) {
-        return path.join(this.workspaceRoot, relativePath);
     }
 
     private getProgramCacheItem(uri: string): ProgramCacheItem {
