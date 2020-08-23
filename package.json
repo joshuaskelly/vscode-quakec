@@ -39,7 +39,7 @@
 			{
 				"language": "quakec",
 				"scopeName": "source.qc",
-				"path": "./client/syntaxes/quakec.tmLanguage.json"
+				"path": "./client/syntaxes/quakec.plist"
 			}
 		],
 		"configuration": {
