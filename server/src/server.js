@@ -1,15 +1,14 @@
 'use strict';
 
 const {
-	IPCMessageReader, IPCMessageWriter, createConnection, IConnection,
-	TextDocuments, InitializeResult, TextDocumentPositionParams,
-	Location, Hover, ReferenceParams, PublishDiagnosticsParams, TextDocumentSyncKind
+	IPCMessageReader,
+	IPCMessageWriter,
+	createConnection,
+	TextDocuments,
+	TextDocumentSyncKind
 } = require('vscode-languageserver');
 
-const {
-	TextDocument
-} = require('vscode-languageserver-textdocument');
-
+const { TextDocument } = require('vscode-languageserver-textdocument');
 const { SourceDocumentManager } = require('./language');
 
 let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
