@@ -654,6 +654,24 @@ describe("Lexer", function() {
 
             assert.equal(actual.length, 0);
         });
+        it("Should ignore sprite name definitions", function() {
+            var program = `$spritename name`;
+            var actual = all(program);
+
+            assert.equal(actual.length, 0);
+        });
+        it("Should ignore type definitions", function() {
+            var program = `$type type`;
+            var actual = all(program);
+
+            assert.equal(actual.length, 0);
+        });
+        it("Should ignore load definitions", function() {
+            var program = `$load /test/sprites`;
+            var actual = all(program);
+
+            assert.equal(actual.length, 0);
+        });
         it("Should ignore name definitions", function() {
             var program = `$name armor`;
             var actual = all(program);
