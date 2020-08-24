@@ -1,17 +1,12 @@
 {
 	"compilerOptions": {
-		"noImplicitAny": true,
-		"noImplicitReturns": true,		
-		"target": "es6",
 		"module": "commonjs",
-		"moduleResolution": "node",
-		"rootDir": ".",
+		"target": "es2019",
+		"lib": ["ES2019"],
 		"outDir": "out",
-		"lib": [ "es2016" ],
+		"rootDir": "src",
 		"sourceMap": true
 	},
-	"exclude": [
-		"node_modules",
-		"server"
-	]
+	"include": ["src"],
+	"exclude": ["node_modules", ".vscode-test"]
 }
