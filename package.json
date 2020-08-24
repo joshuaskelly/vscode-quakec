@@ -4,28 +4,73 @@
 	"description": "A QuakeC Language Extension for VS Code",
 	"author": "Joshua Skelton",
 	"license": "MIT",
-	"engines": {
-		"node": "*",
-		"vscode": "^1.39.0"
-	},
 	"version": "0.2.1",
-	"publisher": "joshuaskelly",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/joshuaskelly/vscode-quakec"
 	},
+	"publisher": "joshuaskelly",
+	"categories": [],
+	"keywords": [],
+	"engines": {
+		"node": "*",
+		"vscode": "^1.39.0"
+	},
+	"activationEvents": [
+		"onLanguage:quakec"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"languages": [
+			{
+				"id": "quakec",
+				"aliases": [
+					"Quake-C",
+					"QuakeC",
+					"qcc"
+				],
+				"configuration": "./language-configuration.json",
+				"extensions": [
+					".qc"
+				]
+			}
+		],
+		"grammars": [
+			{
+				"language": "quakec",
+				"scopeName": "source.qc",
+				"path": "./client/syntaxes/quakec.plist"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "QuakeC Extension Configuration",
+			"properties": {
+				"quakec.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"quakec.language": {
+					"scope": "resource",
+					"type": "string",
+					"default": "qcc",
+					"description": "Controls parser support for various language features."
+				}
+			}
+		}
+	},
 	"scripts": {
-		"postinstall": "cd parser && npm install && cd ../server && npm install && cd ../client && npm install && cd ..",
-		"compile": "tsc -p client/tsconfig.json && cd server && npm run installServer && cd .. && tsc -p server/tsconfig.json",
-		"compile:client": "tsc -p client/tsconfig.json",
-		"watch:client": "tsc -w -p client/tsconfig.json",
-		"compile:server": "cd server && npm run installServer && cd .. && tsc -p server/tsconfig.json",
-		"watch:server": "cd server && npm run installServer && cd .. && tsc -w -p server/tsconfig.json"
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
 	},
 	"devDependencies": {
-		"@types/mocha": "^2.2.42",
-		"@types/node": "^6.0.88",
-		"typescript": "^2.5.2",
-		"mocha": "^4.1.0"
+		"@types/mocha": "^8.0.3",
+		"mocha": "^8.1.1",
+		"@types/node": "^12.12.0",
+		"typescript": "^3.9.4"
 	}
 }

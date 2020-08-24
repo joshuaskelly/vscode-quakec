@@ -42,7 +42,7 @@
 		</dict>
         <dict>
 			<key>match</key>
-			<string>(\$flags|\$base|\$cd|\$frame|\$framegroupstart|\$framegroupend|\$modelname|\$origin|\$scale|\$skin)\b</string>
+			<string>(\$flags|\$base|\$cd|\$frame|\$framegroupstart|\$framegroupend|\$modelname|\$origin|\$scale|\$skin|\$spritename|\$type|\$load)\b</string>
 			<key>name</key>
 			<string>storage.pragma.qc</string>
 		</dict>

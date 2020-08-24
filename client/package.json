@@ -10,66 +10,13 @@
 		"url": "https://github.com/JoshuaSkelly/vscode-quakec"
 	},
 	"engines": {
-		"vscode": "^1.16.0"
-	},
-	"categories": [
-		"Other",
-		"Languages"
-	],
-	"activationEvents": [
-		"onLanguage:quakec"
-	],
-	"main": "./out/src/extension",
-	"contributes": {
-		"languages": [
-			{
-				"id": "quakec",
-				"aliases": [
-					"Quake-C",
-					"QuakeC",
-					"qcc"
-				],
-				"configuration": "./language-configuration.json",
-				"extensions": [
-					".qc"
-				]
-			}
-		],
-		"grammars": [
-			{
-				"language": "quakec",
-				"scopeName": "source.qc",
-				"path": "./syntaxes/quakec.plist"
-			}
-		],
-		"configuration": {
-			"type": "object",
-			"title": "QuakeC Extension Configuration",
-			"properties": {
-				"quakec.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				},
-				"quakec.language": {
-					"scope": "resource",
-					"type": "string",
-					"default": "qcc",
-					"description": "Controls parser support for various language features."
-				}
-			}
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "tsc -p ./",
-		"compile": "tsc -p ./",
-		"watch": "tsc -w -p ./",
-		"update-vscode": "node ./node_modules/vscode/bin/install",
-		"postinstall": "node ./node_modules/vscode/bin/install"
+		"vscode": "^1.43.0"
 	},
 	"dependencies": {
-		"vscode": "^1.1.5",
-		"vscode-languageclient": "^3.4.2"
+		"vscode-languageclient": "^6.1.3"
+	},
+	"devDependencies": {
+		"@types/vscode": "1.43.0",
+		"vscode-test": "^1.3.0"
 	}
 }
