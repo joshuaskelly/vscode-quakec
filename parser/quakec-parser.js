@@ -1,8 +1,13 @@
 const Lexer = require("./quakec-lexer").Lexer;
-const common = require("./quakec-common");
-const Range = common.Range;
+const Range = require("./quakec-common").Range;
 
-let lexer;
+class FeatureInfo {
+    constructor() {
+        this.binarySubtractRequiresLeadingWhitespace = false;
+    }
+};
+
+var lexer;
 
 /**
  * Global parsing context object.
@@ -32,14 +37,14 @@ let Context = {
     /**
      * An array of parsed symbols.
      *
-     * @type {Symbols[]} symbols
+     * @type {Symbol[]} symbols
      */
     symbols: [],
 
     /**
      * An array of Errors.
      *
-     * @type {Diagnostic[]} errors
+     * @type {import("typescript").Diagnostic[]} errors
      */
     errors: [],
 
@@ -48,7 +53,14 @@ let Context = {
      *
      * @type {string} language
      */
-    language: "qcc"
+    language: "qcc",
+
+    /**
+     * An object that holds feature flags.
+     * 
+     * @type {FeatureInfo} features
+     */
+    features: new FeatureInfo()
 };
 
 class Symbol {
@@ -1037,7 +1049,7 @@ Define.infix("-", 50, function(left) {
     this.second = Parse.expression(50);
     this.arity = "binary";
 
-    if (Context.language === "qcc") {
+    if (Context.features.binarySubtractRequiresLeadingWhitespace) {
         if (this.second.arity === "literal") {
             const s = this.range.end;
             const e = this.second.range.start;
@@ -1309,7 +1321,8 @@ const parse = function(programInfo) {
         scope: null,
         symbols: [],
         errors: [],
-        language: programInfo.language || "qcc"
+        language: programInfo.language || "qcc",
+        features: programInfo.features || new FeatureInfo()
     };
 
     lexer.setInput(programInfo.program);
@@ -1530,5 +1543,6 @@ class Program {
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
     exports.parse = parse;
     exports.Program = Program;
+    exports.FeatureInfo = FeatureInfo;
     exports.Scope = Scope;
 }
