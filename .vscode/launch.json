@@ -8,11 +8,7 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-            "outFiles": ["${workspaceRoot}/client/out/**/*.js"],
-            "preLaunchTask": {
-                "type": "npm",
-                "script": "watch"
-            }
+            "outFiles": ["${workspaceRoot}/client/src/**/*.js"]
         },
         {
             "name": "Attach to Server",
@@ -20,7 +16,7 @@
             "request": "attach",
             "port": 6009,
             "restart": true,
-            "outFiles": ["${workspaceRoot}/server/out/**/*.js"]
+            "outFiles": ["${workspaceRoot}/server/src/**/*.js"]
         },
         {
             "name": "Run Tests",
