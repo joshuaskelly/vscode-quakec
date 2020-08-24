@@ -1,16 +1,10 @@
 'use strict';
 
-const path = require("path");
-
-const {
-	ExtensionContext,
-	workspace
-} = require('vscode');
+const path = require('path');
+const { workspace } = require('vscode');
 
 const {
 	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
 	TransportKind
 } = require('vscode-languageclient');
 

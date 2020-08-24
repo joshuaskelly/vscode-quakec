@@ -7,40 +7,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const parser = require("../../parser/quakec-parser");
-
-const {
-    Hover,
-    Location,
-    Position,
-    ReferenceParams,
-    TextDocument,
-    TextDocumentPositionParams,
-    Diagnostic,
-    DiagnosticSeverity,
-    PublishDiagnosticsParams
-} = require('vscode-languageserver');
-
-const {
-    Program,
-    Scope,
-    ParseInfo,
-    Error
-} = require("../../parser/quakec-parser");
-
-class DocumentCacheItem {
-    constructor() {
-        this.version = -1;
-        this.document = null;
-    }
-};
-
-class ProgramCacheItem {
-    constructor() {
-        this.uri = "";
-        this.isValid = false;
-        this.program = null;
-    }
-};
+const { TextDocument } = require('vscode-languageserver');
 
 /* Class for working with source documents. */
 module.exports.SourceDocumentManager = class SourceDocumentManager {
@@ -436,7 +403,6 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         this.sourceOrder = text.split(/\s+/).filter(sourceDoc => sourceDoc);
         this.sourceOrder.shift();
 
-        let self = this;
         this.sourceOrder = this.sourceOrder.map(
             function(sourceDoc) {
                 return path.join(path.dirname(progsSrcDocument.uri), sourceDoc);
