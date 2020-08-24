@@ -836,7 +836,7 @@ class Parse {
         let statement;
 
         while(true) {
-            if (Context.token.id === "}") {
+            if (Context.token.id === "}" || Context.token.id === "(end)") {
                 break;
             }
 
