@@ -1,21 +1,21 @@
 'use strict';
 
 const {
-	IPCMessageReader,
-	IPCMessageWriter,
-	createConnection,
-	TextDocuments,
-	TextDocumentSyncKind
+	IPCMessageReader, IPCMessageWriter, createConnection, IConnection,
+	TextDocuments, InitializeResult, TextDocumentPositionParams,
+	Location, Hover, ReferenceParams, PublishDiagnosticsParams, TextDocumentSyncKind
 } = require('vscode-languageserver');
 
-const { TextDocument } = require('vscode-languageserver-textdocument');
+const {
+	TextDocument
+} = require('vscode-languageserver-textdocument');
+
 const { SourceDocumentManager } = require('./language');
 
-const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
-const documents = new TextDocuments(TextDocument);
+let connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+let documents = new TextDocuments(TextDocument);
 documents.listen(connection);
 
-/** @type {SourceDocumentManager} */
 let documentManager;
 
 let workspaceRoot;
@@ -31,7 +31,7 @@ connection.onInitialize((params) => {
 			hoverProvider: true,
 			referencesProvider: true
 		}
-	};
+	}
 });
 
 documents.onDidChangeContent((change) => {
@@ -39,19 +39,18 @@ documents.onDidChangeContent((change) => {
 	sendDiagnostics();
 });
 
-/** @type {string} */
 let language;
 
-const sendDiagnostics = function() {
-	const diagnostics = documentManager.getDiagnosticsAll();
+let sendDiagnostics = function() {
+	let diagnostics = documentManager.getDiagnosticsAll();
 
-	for (const d of diagnostics) {
+	for (let d of diagnostics) {
 		connection.sendDiagnostics(d);
 	}
 };
 
 connection.onDidChangeConfiguration((change) => {
-	const settings = change.settings;
+	let settings = change.settings;
 	language = settings.quakec.language || "qcc";
 	documentManager.setLanguage(language);
 	sendDiagnostics();
