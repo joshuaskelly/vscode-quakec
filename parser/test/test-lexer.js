@@ -156,8 +156,6 @@ describe("Lexer", function() {
                 };
                 lexer.setInput(program);
                 var actual = lexer.lex();
-                assert.equal();
-
                 assert.tokensEqual(expected, actual);
             });
             it("Should handle newlines", function() {
@@ -187,8 +185,6 @@ describe("Lexer", function() {
                 };
                 lexer.setInput(program);
                 var actual = lexer.lex();
-                assert.equal();
-
                 assert.tokensEqual(expected, actual);
             });
         });
