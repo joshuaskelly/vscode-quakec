@@ -62,7 +62,7 @@
 		}
 	},
 	"scripts": {
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ../parser && npm install && cd .."
 	},
 	"devDependencies": {
 		"@types/mocha": "^8.0.3",
