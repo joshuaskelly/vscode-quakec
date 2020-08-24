@@ -12,7 +12,6 @@
 		"url": "https://github.com/joshuaskelly/vscode-quakec"
 	},
 	"dependencies": {
-		"quakec-parser": "file:../parser",
 		"vscode-languageserver": "^6.1.1",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
