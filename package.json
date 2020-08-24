@@ -62,7 +62,6 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd .."
 	},
 	"devDependencies": {
