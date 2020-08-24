@@ -9,12 +9,6 @@
     "type": "git",
     "url": "https://github.com/JoshuaSkelly/vscode-quakec"
   },
-  "devDependencies": {
-	"@types/mocha": "^8.0.3",
-	"@types/node": "^12.12.0",
-    "gulp": "^4.0.0",
-	"mocha": "^8.1.1"
-  },
   "dependencies": {
     "lex": "^1.7.9"
   },
