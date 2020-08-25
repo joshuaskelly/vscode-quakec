@@ -26,10 +26,10 @@ class DocumentCacheItem {
      */
     constructor(version, document) {
         /** @type {number} */
-        this.version = version | -1;
+        this.version = version || -1;
 
         /** @type {TextDocument} */
-        this.document = document | null;
+        this.document = document || null;
     }
 }
 
@@ -41,13 +41,13 @@ class ProgramCacheItem {
      */
     constructor(uri, isValid, program) {
         /** @type {string} */
-        this.uri = uri | "";
+        this.uri = uri || "";
 
         /** @type {boolean} */
-        this.isValid = isValid | false;
+        this.isValid = isValid || false;
 
         /** @type {Program | null} */
-        this.program = program | null;
+        this.program = program || null;
     }
 }
 
@@ -456,10 +456,10 @@ class ProgramCacheItem {
     /**
      * Validate the given document and return a Program object.
      * @param {string} uri Document uri string.
-     * @param {Scope} scope Parent Scope object.
+     * @param {Scope} parentScope Parent Scope object.
      * @return {Program} A Program object.
      */
-    validateProgram(uri, scope) {
+    validateProgram(uri, parentScope) {
         let programCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
@@ -471,7 +471,7 @@ class ProgramCacheItem {
         }
 
         if (programCacheItem && programCacheItem.program && programCacheItem.program.scope) {
-            scope = scope || programCacheItem.program.scope.parent;
+            parentScope = parentScope || programCacheItem.program.scope.parent;
         }
 
         const document = this.getDocument(uri);
@@ -484,7 +484,7 @@ class ProgramCacheItem {
         const parseInfo = {
             program: document.getText(),
             uri: uri,
-            parentScope: scope,
+            parentScope: parentScope,
             language: this.language
         };
         const program = parser.parse(parseInfo);
