@@ -10,7 +10,14 @@
 		"node": true,
 		"browser": false
 	},
+	"extends": [
+		"eslint:recommended"
+	],
 	"rules": {
-		
+		"no-var": "error",
+		"prefer-const": "warn",
+		"no-constant-condition": "off",
+		"semi": "error",
+		"no-unused-vars": "warn"
 	}
 }

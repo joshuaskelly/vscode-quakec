@@ -9,16 +9,76 @@ const path = require("path");
 const parser = require("../../parser/quakec-parser");
 const { TextDocument } = require('vscode-languageserver');
 
-/* Class for working with source documents. */
-module.exports.SourceDocumentManager = class SourceDocumentManager {
+/** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic*/
+/** @typedef {import('vscode-languageserver').Hover} Hover*/
+/** @typedef {import('vscode-languageserver').Location} Location*/
+/** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams*/
+/** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams*/
+/** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams*/
+/** @typedef {import('vscode-languageserver-textdocument').TextDocument} TextDocument */
+/** @typedef {import('../../parser/quakec-parser').Program} Program */
+/** @typedef {import('../../parser/quakec-parser').Scope} Scope */
+
+class DocumentCacheItem {
     /**
-     * Create a SourceDocumentManager
-     * @param {string} workspaceRoot - A path to the workspace root directory.
+     * @param {number} version Document version.
+     * @param {TextDocument} document TextDocument
      */
+    constructor(version, document) {
+        /** @type {number} */
+        this.version = version | -1;
+
+        /** @type {TextDocument} */
+        this.document = document | null;
+    }
+}
+
+class ProgramCacheItem {
+    /**
+     * @param {string} uri Document uri string.
+     * @param {boolean} isValid Is given Program object valid?
+     * @param {Program} program A Program object.
+     */
+    constructor(uri, isValid, program) {
+        /** @type {string} */
+        this.uri = uri | "";
+
+        /** @type {boolean} */
+        this.isValid = isValid | false;
+
+        /** @type {Program | null} */
+        this.program = program | null;
+    }
+}
+
+ /** @class SourceDocumentManager */
+ module.exports.SourceDocumentManager = class SourceDocumentManager {
     constructor(root) {
+        /**
+         * Path to the workspace root directory.
+         * @type {string}
+         *  */
         this.workspaceRoot = root;
+
+        /**
+         * Document cache.
+         *
+         * @type Object.<string, DocumentCacheItem>
+         */
         this.documents = {};
+
+        /**
+         * Program cache.
+         *
+         * @type {Object.<string, ProgramCacheItem>}
+         */
         this.programs = {};
+
+        /**
+         * The order to process source documents.
+         *
+         * @type {string[]}
+         */
         this.sourceOrder = [];
         this.documentsParsed = 0;
         this.language = "qcc";
@@ -27,33 +87,32 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
 
     /**
      * Gets the source document for a given uri
-     * @param uri - Document uri
+     *
+     * @param {string} uri Document uri string.
+     * @return {TextDocument} TextDocument object.
      */
     getDocument(uri) {
-        let documentCacheItem = this.getDocumentCacheItem(uri);
+        const documentCacheItem = this.getDocumentCacheItem(uri);
 
         if (!documentCacheItem) {
             return null;
-        };
+        }
 
         return documentCacheItem.document;
     }
 
     /**
      * Update document
-     * @param document - Text document to update
+     *
+     * @param {TextDocument} document TextDocument to update.
      */
     updateDocument(document) {
-        let uri = this.fromVSCodeUri(document.uri);
+        const uri = this.fromVSCodeUri(document.uri);
         let documentCacheItem = this.getDocumentCacheItem(uri);
 
         // Update if not currently tracked or newer version
         if (!documentCacheItem || documentCacheItem.version < document.version) {
-
-            documentCacheItem = {
-                version: document.version,
-                document: document
-            };
+            documentCacheItem = new DocumentCacheItem(document.version, document);
 
             this.setDocumentCacheItem(uri, documentCacheItem);
             this.invalidateProgram(uri);
@@ -61,14 +120,20 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         }
     }
 
+    /**
+     * Hover request handler.
+     *
+     * @param {TextDocumentPositionParams} request A Hover request.
+     * @return {Hover} A Hover object
+     */
     getHover(request) {
-        let program = this.getProgram(request.textDocument.uri);
+        const program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return { contents: "" };
         }
 
-        let type = program.getTypeString(request.position);
+        const type = program.getTypeString(request.position);
 
         if (!type) {
             return { contents: "" };
@@ -82,8 +147,14 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         };
     }
 
+    /**
+     * Definition request handler.
+     *
+     * @param {TextDocumentPositionParams} request A definition request.
+     * @return {Location} A Location object.
+     */
     getDefinition(request) {
-        let program = this.getProgram(request.textDocument.uri);
+        const program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return {
@@ -95,41 +166,53 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             };
         }
 
-        let location = program.getDefinition(request.position);
+        const location = program.getDefinition(request.position);
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
     }
 
+    /**
+     * Reference request hander.
+     *
+     * @param {ReferenceParams} request A reference request.
+     * @return {Location} A Location object.
+     */
     getReferences(request) {
         this.validateProgramCache();
-        let program = this.getProgram(request.textDocument.uri);
+        const program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return [];
         }
 
-        let locations = program.getReferences(request.position, request.context.includeDeclaration);
+        const locations = program.getReferences(request.position, request.context.includeDeclaration);
 
-        for (let location of locations) {
+        for (const location of locations) {
             location.uri = this.toVSCodeUri(location.uri);
         }
 
         return locations;
     }
 
-    getDiagnostics(request) {
-        let program = this.getProgram(request.uri);
+    /**
+     * Get diagnostics for the given document.
+     *
+     * @param {TextDocument} document TextDocument to get diagnostics for.
+     * @return {Diagnostic[]} A Diagnostic object.
+     */
+    getDiagnostics(document) {
+        const program = this.getProgram(document.uri);
 
         if (!program) {
             return [];
         }
 
-        let diagnostics = [];
-        let errors = program.getErrors();
+        const diagnostics = [];
+        const errors = program.getErrors();
 
-        for (let error of errors) {
-            let diagnostic = {
+        for (const error of errors) {
+            const diagnostic = {
                 range: error.range,
                 severity: error.severity,
                 message: error.message
@@ -141,16 +224,22 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         return diagnostics;
     }
 
+    /**
+     * Get diagnostics for all documents in the workspace.
+     *
+     * @return {PublishDiagnosticsParams[]} An array of PublishDiagnosticsParams objects.
+     */
     getDiagnosticsAll() {
-        let publishDiagnosticsParams = [];
-        for (let uri in this.documents) {
-            let document = this.getDocument(uri);
+        /** @type {PublishDiagnosticsParams[]} */
+        const publishDiagnosticsParams = [];
+        for (const uri in this.documents) {
+            const document = this.getDocument(uri);
 
             if (document == null) {
                 continue;
             }
 
-            let diagnostics = this.getDiagnostics(document);
+            const diagnostics = this.getDiagnostics(document);
             publishDiagnosticsParams.push(
                 {
                     uri: this.toVSCodeUri(uri),
@@ -162,6 +251,11 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         return publishDiagnosticsParams;
     }
 
+    /**
+     * Set language.
+     *
+     * @param {string} language
+     */
     setLanguage(language) {
         if (this.language !== language) {
             this.language = language || "qcc";
@@ -170,9 +264,15 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         }
     }
 
+    /**
+     * Get a Program for the given uri.
+     *
+     * @param {string} uri Document uri string.
+     * @return {Program} A Program object.
+     */
     getProgram(uri) {
         uri = this.fromVSCodeUri(uri);
-        let programCacheItem = this.getProgramCacheItem(uri);
+        const programCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return null;
@@ -186,18 +286,24 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
     }
 
     /**
-     * Load documents from workspace.
+     * Load all source documents in workspace.
      */
     loadDocuments() {
         this.documents = {};
 
-        let walk = function(dir) {
+        /**
+         * Helper function to walk a given directory.
+         *
+         * @param {string} dir
+         * @return {string[]} An array of uri strings.
+         */
+        const walk = function(dir) {
             let results = [];
-            let files = fs.readdirSync(dir);
+            const files = fs.readdirSync(dir);
 
-            for (let file of files) {
-                let uri = path.join(dir, file);
-                let stat = fs.statSync(uri);
+            for (const file of files) {
+                const uri = path.join(dir, file);
+                const stat = fs.statSync(uri);
 
                 if (stat.isDirectory()) {
                     results = results.concat(walk(uri));
@@ -208,20 +314,21 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             }
 
             return results;
-        }
+        };
 
+        /** @type {string[]} */
         let uris = [];
 
         if (this.workspaceRoot) {
             uris = walk(this.fromVSCodeUri(this.workspaceRoot));
         }
 
-        for (let uri of uris) {
+        for (const uri of uris) {
             if (!this.isSourceDocument(uri) && !this.isProjectDocument(uri)) {
                 continue;
             }
 
-            let document = this.loadDocument(uri);
+            const document = this.loadDocument(uri);
 
             if (!document) {
                 return;
@@ -235,46 +342,63 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         this.validateProgramCache();
     }
 
+    /**
+     * Create a TextDocument object from the given uri and update the document
+     * cache.
+     *
+     * @param {string} uri Document uri string.
+     * @return {TextDocument} A TextDocument object.
+     */
     loadDocument(uri) {
-        let document = this.readDocument(uri);
+        const document = this.readDocument(uri);
 
         if (!document) {
             return null;
         }
 
-        let documentCacheItem = {
-            version: document.version,
-            document: document
-        };
+        const documentCacheItem = new DocumentCacheItem(document.version, document);
         this.setDocumentCacheItem(uri, documentCacheItem);
 
         if (this.isSourceDocument(uri)) {
-            let programCacheItem = {
-                uri: uri,
-                isValid: false,
-                program: null
-            };
-
+            const programCacheItem = new ProgramCacheItem(uri, false, null);
             this.setProgramCacheItem(uri, programCacheItem);
         }
 
         return document;
     }
 
+    /**
+     * Is the given uri is a Quake C source document?
+     *
+     * @param {string} uri Document uri string.
+     * @return {boolean} True if given uri a Quake C source document.
+     */
     isSourceDocument(uri) {
         return path.extname(uri) === ".qc";
     }
 
+    /**
+     * Is the given uri a Quake C source ordering?
+     *
+     * @param {string} uri Document uri string.
+     * @return {boolean} True if the given uri a Quake C source ordering.
+     */
     isProjectDocument(uri) {
         return path.win32.basename(uri) === "progs.src";
     }
 
+    /**
+     * Create a TextDocument object from a given uri.
+     *
+     * @param {string} uri Document uri string.
+     * @return {TextDocument} A TextDocument object.
+     */
     readDocument(uri) {
         if (!fs.existsSync(uri)) {
             return null;
         }
 
-        let content = fs.readFileSync(uri, "utf8");
+        const content = fs.readFileSync(uri, "utf8");
 
         let langId = "quakec";
         if (!this.isSourceDocument(uri)) {
@@ -284,9 +408,14 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         return TextDocument.create(uri, langId, 1, content);
     }
 
+    /**
+     * Validate all Programs.
+     *
+     * @param {string?} stopAtUri An optional uri to stop validating programs.
+     */
     validateProgramCache(stopAtUri) {
         console.log("Validating AST Cache...");
-        let start = new Date().getTime();
+        const start = new Date().getTime();
         this.documentsParsed = 0;
         let done = false;
 
@@ -294,10 +423,10 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             let scope = null;
 
             for (let i = 0; i < this.sourceOrder.length; i++) {
-                let uri = this.sourceOrder[i];
+                const uri = this.sourceOrder[i];
 
                 console.log(`   Validating ${path.win32.basename(uri)}`);
-                var program = this.validateProgram(uri, scope);
+                const program = this.validateProgram(uri, scope);
 
                 if (program) {
                     scope = program.scope;
@@ -311,7 +440,7 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         }
 
         if (!done) {
-            for (let uri in this.programs) {
+            for (const uri in this.programs) {
                 this.validateProgram(uri, null);
 
                 if (uri === stopAtUri) {
@@ -320,10 +449,16 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             }
         }
 
-        let elapsed = new Date().getTime() - start;
+        const elapsed = new Date().getTime() - start;
         console.log(`Parsed ${this.documentsParsed} documents in ${elapsed} milliseconds`);
-    };
+    }
 
+    /**
+     * Validate the given document and return a Program object.
+     * @param {string} uri Document uri string.
+     * @param {Scope} scope Parent Scope object.
+     * @return {Program} A Program object.
+     */
     validateProgram(uri, scope) {
         let programCacheItem = this.getProgramCacheItem(uri);
 
@@ -339,45 +474,52 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             scope = scope || programCacheItem.program.scope.parent;
         }
 
-        let document = this.getDocument(uri);
+        const document = this.getDocument(uri);
 
         if (!document) {
             return null;
         }
 
-        let parseInfo = {
+        // Parse the document
+        const parseInfo = {
             program: document.getText(),
             uri: uri,
             parentScope: scope,
             language: this.language
         };
-        let program = parser.parse(parseInfo);
-        programCacheItem = {
-            uri: uri,
-            isValid: true,
-            program: program
-        };
+        const program = parser.parse(parseInfo);
+
+        programCacheItem = new ProgramCacheItem(uri, true, program);
         this.setProgramCacheItem(uri, programCacheItem);
 
         this.documentsParsed += 1;
 
         return program;
-    };
+    }
 
+    /**
+     * Invalidate all Program objects.
+     */
     invalidateProgramCache() {
-        for (let uri in this.programs) {
+        for (const uri in this.programs) {
             this.invalidateProgram(uri, false);
         }
-    };
+    }
 
+    /**
+     * Invalidate a given document.
+     *
+     * @param {string} uri Document uri string.
+     * @param {boolean} invalidateDownstream Invalidate all downstream programs?
+     */
     invalidateProgram(uri, invalidateDownstream = true) {
-        let programCacheItem = this.getProgramCacheItem(uri);
+        const programCacheItem = this.getProgramCacheItem(uri);
 
         if (!programCacheItem) {
             return;
         }
 
-        let program = programCacheItem.program;
+        const program = programCacheItem.program;
 
         if (!program) {
             return;
@@ -390,14 +532,23 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         program.invalidate();
 
         if (invalidateDownstream && this.sourceOrder.includes(uri)) {
-            for (var i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {
-                let uri = this.sourceOrder[i];
+            for (let i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {
+                const uri = this.sourceOrder[i];
                 this.invalidateProgram(uri, false);
             }
         }
     }
 
+    /**
+     * Create a source ordering for the given progs.src document.
+     *
+     * @param {TextDocument} progsSrcDocument
+     */
     buildSourceOrder(progsSrcDocument) {
+        if (!this.isProjectDocument(progsSrcDocument.uri)) {
+            return;
+        }
+
         let text = progsSrcDocument.getText();
         text = text.replace(/\/\/.*/g, "");
         this.sourceOrder = text.split(/\s+/).filter(sourceDoc => sourceDoc);
@@ -409,25 +560,55 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             });
     }
 
+    /**
+     * Get a ProgramCacheItem for the given document uri.
+     *
+     * @param {string} uri Document uri string.
+     * @return {ProgramCacheItem} A ProgramCacheItem object.
+     */
     getProgramCacheItem(uri) {
         return this.programs[uri.toLowerCase()];
     }
 
+    /**
+     * Set ProgramCacheItem for given uri string.
+     *
+     * @param {string} uri Document uri string.
+     * @param {ProgramCacheItem} cacheItem ProgramCacheItem to set.
+     */
     setProgramCacheItem(uri, cacheItem) {
         this.programs[uri.toLowerCase()] = cacheItem;
     }
 
+    /**
+     * Get DocumentCacheItem for given document uri.
+     *
+     * @param {string} uri Document uri string.
+     * @return {DocumentCacheItem} DocumentCacheItem for given uri.
+     */
     getDocumentCacheItem(uri) {
         return this.documents[uri.toLowerCase()];
     }
 
+    /**
+     * Set the DocumentCacheItem for given document uri.
+     *
+     * @param {string} uri Document uri string.
+     * @param {DocumentCacheItem} cacheItem DocumentCacheItem to set for given uri.
+     */
     setDocumentCacheItem(uri, cacheItem) {
         this.documents[uri.toLowerCase()] = cacheItem;
     }
 
+    /**
+     * Normalize VS Code uri strings.
+     *
+     * @param {string} uri Document uri string.
+     * @return {string} Normalized uri string.
+     */
     fromVSCodeUri(uri) {
         uri = uri.replace(/file:[\\/]+/, "");
-        let osType = os.type();
+        const osType = os.type();
 
         if (osType === "Windows_NT") {
             uri = uri.replace("%3A", ":");
@@ -439,9 +620,14 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         return path.normalize(uri);
     }
 
+    /**
+     * Convert normalized string to the format VS Code expects.
+     * @param {string} uri Document string uri.
+     * @return {string} VS Code specific uri string.
+     */
     toVSCodeUri(uri) {
         uri = uri.replace(/\\/g, path.posix.sep);
-        let osType = os.type();
+        const osType = os.type();
 
         if (osType === "Windows_NT") {
             return "file:" + path.posix.sep + uri;
@@ -449,4 +635,4 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
 
         return "file:" + path.posix.sep + path.posix.sep + uri;
     }
-}
+};
