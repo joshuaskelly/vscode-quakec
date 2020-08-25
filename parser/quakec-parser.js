@@ -4,6 +4,8 @@ const Range = require("./quakec-common").Range;
 class FeatureInfo {
     constructor() {
         this.binarySubtractRequiresLeadingWhitespace = false;
+        this.ternaryOperator = false;
+        this.ternaryOperatorShorthand = false;
     }
 };
 
@@ -719,6 +721,7 @@ class Parse {
                 {line: -1, character: -1}
             );
 
+            Context.symbols.push(Context.token);
             return Context.token;
         }
 
@@ -1034,6 +1037,7 @@ Define.symbol("[");
 Define.symbol("]");
 Define.symbol("$");
 Define.symbol("else");
+Define.symbol(":");
 
 Define.infix("+", 50);
 Define.infix("*", 60);
@@ -1058,6 +1062,32 @@ Define.infix("-", 50, function(left) {
             }
         }
     }
+
+    return this;
+});
+
+Define.infix("?", 30, function(left) {
+    this.first = left;
+
+    if (Context.token.id === ':') {
+        this.second = left;
+
+        if (!Context.features.ternaryOperatorShorthand) {
+            this.error("Ternary operator shorthand is not supported.");
+        }
+    }
+    else {
+        this.second = Parse.expression(30);
+
+        if (!Context.features.ternaryOperator) {
+            this.error("Ternary operator is not supported.");
+        }
+    }
+
+    Parse.advance(':');
+        
+    this.third = Parse.expression(30);
+    this.arity = "ternary";
 
     return this;
 });

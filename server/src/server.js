@@ -30,7 +30,7 @@ connection.onInitialize((params) => {
 			hoverProvider: true,
 			referencesProvider: true
 		}
-	}
+	};
 });
 
 documents.onDidChangeContent((change) => {
@@ -39,6 +39,7 @@ documents.onDidChangeContent((change) => {
 });
 
 let language;
+let features;
 
 let sendDiagnostics = function() {
 	let diagnostics = documentManager.getDiagnosticsAll();
@@ -48,10 +49,34 @@ let sendDiagnostics = function() {
 	}
 };
 
+let createFeatures = function(language) {
+	switch (language) {
+		case 'qcc':
+			return {
+				binarySubtractRequiresLeadingWhitespace: true
+			};
+		case 'fteqcc':
+			return {
+				ternaryOperator: true,
+				ternaryOperatorShorthand: true
+			};
+		default:
+			return { };
+	}
+};
+
 connection.onDidChangeConfiguration((change) => {
 	let settings = change.settings;
 	language = settings.quakec.language || "qcc";
-	documentManager.setLanguage(language);
+	features = createFeatures(language);
+
+	if (settings.quakec.features) {
+		for (const key of Object.keys(settings.quakec.features)) {
+			features[key] = settings.quakec.features[key];
+		}
+	}
+
+	documentManager.setLanguageAndFeatures(language, features);
 	sendDiagnostics();
 });
 

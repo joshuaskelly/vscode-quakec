@@ -86,16 +86,15 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
         let program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
-            return {
-                uri: "",
-                range: {
-                    start: { line: -1, character: -1},
-                    end: { line: -1, character: -1}
-                }
-            };
+            return null;
         }
 
         let location = program.getDefinition(request.position);
+
+        if (!location) {
+            return null;
+        }
+
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
