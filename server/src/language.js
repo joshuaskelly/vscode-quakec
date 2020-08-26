@@ -7,7 +7,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const parser = require("../../parser/quakec-parser");
-const { TextDocument } = require('vscode-languageserver');
+const { TextDocument, DocumentHighlight, DocumentHighlightKind, DocumentSymbol } = require('vscode-languageserver');
 
 /* Class for working with source documents. */
 module.exports.SourceDocumentManager = class SourceDocumentManager {
@@ -112,6 +112,25 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
 
         for (let location of locations) {
             location.uri = this.toVSCodeUri(location.uri);
+        }
+
+        return locations;
+    }
+
+    /** @param {import("vscode-languageserver").DocumentHighlightParams} request */
+    getHighlight(request) {
+        let program = this.getProgram(request.textDocument.uri);
+
+        if (!program) {
+            return [];
+        }
+
+        /** @type {DocumentHighlight[]} */
+        let locations = program.getReferences(request.position, true, false);
+
+        for (const location of locations) {
+            delete location.uri;
+            locations.kind = DocumentHighlightKind.Read;
         }
 
         return locations;

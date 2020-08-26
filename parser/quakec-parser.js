@@ -1487,10 +1487,11 @@ class Program {
      *
      * @param {Position} position
      * @param {boolean} includeDeclaration
+     * @param {boolean} recursive
      *
      * @returns {Location[]}
      */
-    getReferences(position, includeDeclaration) {
+    getReferences(position, includeDeclaration, recursive = true) {
         const definition = this.getSymbolDefinition(position);
         const result = [];
 
@@ -1500,6 +1501,10 @@ class Program {
 
         for (const symbol of definition.refs) {
             if (!includeDeclaration && symbol === definition) {
+                continue;
+            }
+
+            if (!recursive && symbol.scope.uri !== this.scope.uri) {
                 continue;
             }
 
