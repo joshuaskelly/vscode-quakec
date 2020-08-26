@@ -7,7 +7,6 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const parser = require("../../parser/quakec-parser");
-const { DocumentHighlightKind } = require('vscode-languageserver');
 const { TextDocument } = require('vscode-languageserver-textdocument');
 
 /** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic */
@@ -16,8 +15,6 @@ const { TextDocument } = require('vscode-languageserver-textdocument');
 /** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams */
 /** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams */
 /** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams */
-/** @typedef {import('vscode-languageserver').DocumentHighlightParams} DocumentHighlightParams */
-/** @typedef {import('vscode-languageserver').DocumentHighlight} DocumentHighlight */
 /** @typedef {import('../../parser/quakec-parser').Program} Program */
 /** @typedef {import('../../parser/quakec-parser').Scope} Scope */
 /** @typedef {import('../../parser/quakec-parser').FeatureInfo} FeatureInfo */
@@ -192,32 +189,6 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
 
         for (const location of locations) {
             location.uri = this.toVSCodeUri(location.uri);
-        }
-
-        return locations;
-    }
-
-
-    /**
-     * Highlight request hander.
-     *
-     * @param {DocumentHighlightParams} request
-     * @return {DocumentHighlight[]} Highlight objects.
-     */
-    getHighlight(request) {
-        this.validateProgramCache();
-        const program = this.getProgram(request.textDocument.uri);
-
-        if (!program) {
-            return [];
-        }
-
-        /** @type {DocumentHighlight[]} */
-        const locations = program.getReferences(request.position, true, false);
-
-        for (const location of locations) {
-            delete location.uri;
-            locations.kind = DocumentHighlightKind.Read;
         }
 
         return locations;
