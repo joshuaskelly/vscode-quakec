@@ -169,10 +169,6 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             return null;
         }
 
-        if (!location) {
-            return null;
-        }
-
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
