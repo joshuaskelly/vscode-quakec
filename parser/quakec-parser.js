@@ -1484,6 +1484,7 @@ class Program {
      *
      * @param {Position} position
      * @param {boolean} includeDeclaration
+     * @param {boolean} recursive
      *
      * @returns {Location[]}
      */
