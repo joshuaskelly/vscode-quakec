@@ -165,10 +165,6 @@ class ProgramCacheItem {
             return null;
         }
 
-        if (!location) {
-            return null;
-        }
-
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
