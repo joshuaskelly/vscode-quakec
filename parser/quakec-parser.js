@@ -1,13 +1,11 @@
 const Lexer = require("./quakec-lexer").Lexer;
 const Range = require("./quakec-common").Range;
 
-/** @typedef {"binarySubtractRequiresLeadingWhitespace"|"ternaryOperator"|"ternaryOperatorShorthand"} LanguageFeatures */
+/** @typedef {"binarySubtractRequiresLeadingWhitespace"} LanguageFeatures */
 
 class FeatureInfo {
     constructor() {
         this.binarySubtractRequiresLeadingWhitespace = false;
-        this.ternaryOperator = false;
-        this.ternaryOperatorShorthand = false;
     }
 }
 
@@ -1106,31 +1104,6 @@ Define.infix("-", 50, function(left) {
             }
         }
     });
-
-    return this;
-});
-
-Define.infix("?:", 30, function(left) {
-    Feature.check('ternaryOperatorShorthand');
-
-    this.first = left;
-    this.second = left;
-    this.third = Parse.expression(30);
-    this.arity = "ternary";
-
-    return this;
-});
-
-Define.infix("?", 30, function(left) {
-    Feature.check('ternaryOperator');
-
-    this.first = left;
-    this.second = Parse.expression(30);
-
-    Parse.advance(':');
-        
-    this.third = Parse.expression(30);
-    this.arity = "ternary";
 
     return this;
 });
