@@ -516,7 +516,8 @@ module.exports.SourceDocumentManager = class SourceDocumentManager {
             program: document.getText(),
             uri: uri,
             parentScope: parentScope,
-            language: this.language
+            language: this.language,
+            features: this.features
         };
         const program = parser.parse(parseInfo);
 
