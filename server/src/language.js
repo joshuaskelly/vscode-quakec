@@ -7,7 +7,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const parser = require("../../parser/quakec-parser");
-const { TextDocument } = require('vscode-languageserver');
+const { TextDocument } = require('vscode-languageserver-textdocument');
 
 /** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic*/
 /** @typedef {import('vscode-languageserver').Hover} Hover*/
@@ -15,7 +15,6 @@ const { TextDocument } = require('vscode-languageserver');
 /** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams*/
 /** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams*/
 /** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams*/
-/** @typedef {import('vscode-languageserver-textdocument').TextDocument} TextDocument */
 /** @typedef {import('../../parser/quakec-parser').Program} Program */
 /** @typedef {import('../../parser/quakec-parser').Scope} Scope */
 
@@ -157,16 +156,15 @@ class ProgramCacheItem {
         const program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
-            return {
-                uri: "",
-                range: {
-                    start: { line: -1, character: -1},
-                    end: { line: -1, character: -1}
-                }
-            };
+            return null;
         }
 
         const location = program.getDefinition(request.position);
+
+        if (!location) {
+            return null;
+        }
+
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
@@ -258,7 +256,7 @@ class ProgramCacheItem {
      */
     setLanguage(language) {
         if (this.language !== language) {
-            this.language = language || "qcc";
+            this.language = language;
             this.invalidateProgramCache();
             this.validateProgramCache();
         }

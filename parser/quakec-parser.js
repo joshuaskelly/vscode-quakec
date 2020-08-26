@@ -1,6 +1,5 @@
 const Lexer = require("./quakec-lexer").Lexer;
-const common = require("./quakec-common");
-const Range = common.Range;
+const Range = require("./quakec-common").Range;
 
 let lexer;
 
@@ -32,14 +31,14 @@ let Context = {
     /**
      * An array of parsed symbols.
      *
-     * @type {Symbols[]} symbols
+     * @type {Symbol[]} symbols
      */
     symbols: [],
 
     /**
      * An array of Errors.
      *
-     * @type {Diagnostic[]} errors
+     * @type {import("typescript").Diagnostic[]} errors
      */
     errors: [],
 
@@ -707,6 +706,7 @@ class Parse {
                 {line: -1, character: -1}
             );
 
+            Context.symbols.push(Context.token);
             return Context.token;
         }
 
@@ -824,7 +824,7 @@ class Parse {
         let statement;
 
         while(true) {
-            if (Context.token.id === "}") {
+            if (Context.token.id === "}" || Context.token.id === "(end)") {
                 break;
             }
 
