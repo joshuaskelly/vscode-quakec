@@ -1061,6 +1061,7 @@ Define.symbol("[");
 Define.symbol("]");
 Define.symbol("$");
 Define.symbol("else");
+Define.symbol(":");
 
 Define.infix("+", 50);
 Define.infix("*", 60);
@@ -1089,26 +1090,26 @@ Define.infix("-", 50, function(left) {
     return this;
 });
 
-Define.infix("?:", 30, function(left) {
-    Feature.check('ternaryOperatorShorthand');
+Define.infix("?", 20, function(left) {
+    Feature.check('ternaryOperator');
 
     this.first = left;
-    this.second = left;
-    this.third = Parse.expression(30);
+    this.second = Parse.expression(0);
+
+    Parse.advance(":");
+
+    this.third = Parse.expression(0);
     this.arity = "ternary";
 
     return this;
 });
 
-Define.infix("?", 30, function(left) {
-    Feature.check('ternaryOperator');
+Define.infix("?:", 20, function(left) {
+    Feature.check('ternaryOperatorShorthand');
 
     this.first = left;
-    this.second = Parse.expression(30);
-
-    Parse.advance(':');
-        
-    this.third = Parse.expression(30);
+    this.second = left;
+    this.third = Parse.expression(0);
     this.arity = "ternary";
 
     return this;
