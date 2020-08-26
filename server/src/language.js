@@ -167,6 +167,10 @@ class ProgramCacheItem {
         }
 
         const location = program.getDefinition(request.position);
+        if (!location) {
+            return null;
+        }
+
         location.uri = this.toVSCodeUri(location.uri);
 
         return location;
