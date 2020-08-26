@@ -29,25 +29,7 @@ class Feature {
             }
         });
 
-        handler(Feature.supported(languageFeature));
-    }
-
-    /**
-     * Check for a specific language feature's support status.
-     * @param {LanguageFeatures} languageFeature 
-     * @return {boolean}
-     */
-    static supported(languageFeature) {
-        return Context.features[languageFeature];
-    }
-
-    /**
-     * Check for a specific language feature's unsupported status.
-     * @param {LanguageFeatures} languageFeature 
-     * @return {boolean}
-     */
-    static unsupported(languageFeature) {
-        return !Feature.supported(languageFeature);
+        handler(Context.features[languageFeature]);
     }
 }
 
@@ -1079,7 +1061,6 @@ Define.symbol("[");
 Define.symbol("]");
 Define.symbol("$");
 Define.symbol("else");
-Define.symbol(":");
 
 Define.infix("+", 50);
 Define.infix("*", 60);
@@ -1503,7 +1484,6 @@ class Program {
      *
      * @param {Position} position
      * @param {boolean} includeDeclaration
-     * @param {boolean} recursive
      *
      * @returns {Location[]}
      */
