@@ -61,6 +61,16 @@
 							"type": "boolean",
 							"default": "false",
 							"description": "Whether or not the binary - operator requires a whitespace before the right-hand operand if it is a literal"
+						},
+						"ternaryOperator": {
+							"type": "boolean",
+							"default": "false",
+							"description": "Whether or not the ternary ? : operator is supported."
+						},
+						"ternaryOperatorShorthand": {
+							"type": "boolean",
+							"default": "false",
+							"description": "Whether or not the binary ?: operator is supported."
 						}
 					}
 				}
