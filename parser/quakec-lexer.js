@@ -1,17 +1,17 @@
-var Lexer = require("lex");
-var common = require("./quakec-common");
-var Position = common.Position;
-var Range = common.Range;
+const Lexer = require("lex");
+const common = require("./quakec-common");
+const Position = common.Position;
+const Range = common.Range;
 
-var new_lexer = function() {
-    var lexer = new Lexer();
+const new_lexer = function() {
+    const lexer = new Lexer();
 
-    var line = 0;
-    var character = 0;
-    var last_position = new Position(line, character);
-    var current_position = new Position(line, character);
+    let line = 0;
+    let character = 0;
+    let last_position = new Position(line, character);
+    let current_position = new Position(line, character);
 
-    var new_token = function(type, value) {
+    const new_token = function(type, value) {
         return {
             type: type,
             value: value,
@@ -20,11 +20,11 @@ var new_lexer = function() {
         };
     };
 
-    var update_position = function(str) {
+    const update_position = function(str) {
         last_position = new Position(line, character);
 
-        for (i = 0; i < str.length; i++) {
-            var c = str[i];
+        for (let i = 0; i < str.length; i++) {
+            const c = str[i];
             if (c === '\n') {
                 line += 1;
                 character = 0;
@@ -37,7 +37,7 @@ var new_lexer = function() {
         current_position = new Position(line, character);
     };
 
-    var process_lexeme = function(type) {
+    const process_lexeme = function(type) {
         return function(lexeme) {
             update_position(lexeme);
 
@@ -61,7 +61,7 @@ var new_lexer = function() {
     lexer.addRule(/./, process_lexeme());
 
     return lexer;
-}
+};
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
     exports.Lexer = function() {
