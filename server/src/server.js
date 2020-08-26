@@ -31,8 +31,7 @@ connection.onInitialize((params) => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			definitionProvider: true,
 			hoverProvider: true,
-			referencesProvider: true,
-			documentHighlightProvider: true
+			referencesProvider: true
 		}
 	};
 });
@@ -92,10 +91,6 @@ connection.onHover((request) => {
 
 connection.onReferences((request) => {
 	return documentManager.getReferences(request);
-});
-
-connection.onDocumentHighlight((request) => {
-	return documentManager.getHighlight(request);
 });
 
 connection.listen();
