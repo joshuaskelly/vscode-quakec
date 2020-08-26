@@ -1,11 +1,55 @@
 const Lexer = require("./quakec-lexer").Lexer;
 const Range = require("./quakec-common").Range;
 
+/** @typedef {"binarySubtractRequiresLeadingWhitespace"|"ternaryOperator"|"ternaryOperatorShorthand"} LanguageFeatures */
+
 class FeatureInfo {
     constructor() {
         this.binarySubtractRequiresLeadingWhitespace = false;
         this.ternaryOperator = false;
         this.ternaryOperatorShorthand = false;
+    }
+}
+
+/** 
+ * Feature handler callback.
+ * @callback FeatureHandler
+ * @param {boolean} supported Whether the support check passed or not.
+ */
+
+class Feature {
+    /**
+     * Call a handler function. 
+     * 
+     * @param {LanguageFeatures} languageFeature 
+     * @param {FeatureHandler} handler 
+     */
+    static check(languageFeature, handler = null) {
+        handler = handler || (supported => {
+            if (!supported) {
+                Context.symbols[Context.symbols.length - 2].error("Unsupported language feature: " + languageFeature);
+            }
+        });
+
+        handler(Feature.supported(languageFeature));
+    }
+
+    /**
+     * Check for a specific language feature's support status.
+     * @param {LanguageFeatures} languageFeature 
+     * @return {boolean}
+     */
+    static supported(languageFeature) {
+        return Context.features[languageFeature];
+    }
+
+    /**
+     * Check for a specific language feature's unsupported status.
+     * @param {LanguageFeatures} languageFeature 
+     * @return {boolean}
+     */
+    static unsupported(languageFeature) {
+        return !Feature.supported(languageFeature);
     }
 }
 
@@ -1053,36 +1097,35 @@ Define.infix("-", 50, function(left) {
     this.second = Parse.expression(50);
     this.arity = "binary";
 
-    if (Context.features.binarySubtractRequiresLeadingWhitespace) {
-        if (this.second.arity === "literal") {
+    Feature.check('binarySubtractRequiresLeadingWhitespace', supported => {
+        if (!supported && this.second.arity === "literal") {
             const s = this.range.end;
             const e = this.second.range.start;
             if (s.line === e.line && e.character === s.character) {
                 this.error("Missing whitespace for '-' operator.");
             }
         }
-    }
+    });
+
+    return this;
+});
+
+Define.infix("?:", 30, function(left) {
+    Feature.check('ternaryOperatorShorthand');
+
+    this.first = left;
+    this.second = left;
+    this.third = Parse.expression(30);
+    this.arity = "ternary";
 
     return this;
 });
 
 Define.infix("?", 30, function(left) {
+    Feature.check('ternaryOperator');
+
     this.first = left;
-
-    if (Context.token.id === ':') {
-        this.second = left;
-
-        if (!Context.features.ternaryOperatorShorthand) {
-            this.error("Ternary operator shorthand is not supported.");
-        }
-    }
-    else {
-        this.second = Parse.expression(30);
-
-        if (!Context.features.ternaryOperator) {
-            this.error("Ternary operator is not supported.");
-        }
-    }
+    this.second = Parse.expression(30);
 
     Parse.advance(':');
         
