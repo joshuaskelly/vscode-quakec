@@ -62,6 +62,11 @@ const createFeatures = function(language) {
 			return {
 				binarySubtractRequiresLeadingWhitespace: true
 			};
+		case 'fteqcc':
+			return {
+				ternaryOperator: true,
+				ternaryOperatorShorthand: true
+			};
 		default:
 			return { };
 	}

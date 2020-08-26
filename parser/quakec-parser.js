@@ -1108,6 +1108,31 @@ Define.infix("-", 50, function(left) {
     return this;
 });
 
+Define.infix("?:", 30, function(left) {
+    Feature.check('ternaryOperatorShorthand');
+
+    this.first = left;
+    this.second = left;
+    this.third = Parse.expression(30);
+    this.arity = "ternary";
+
+    return this;
+});
+
+Define.infix("?", 30, function(left) {
+    Feature.check('ternaryOperator');
+
+    this.first = left;
+    this.second = Parse.expression(30);
+
+    Parse.advance(':');
+        
+    this.third = Parse.expression(30);
+    this.arity = "ternary";
+
+    return this;
+});
+
 Define.infix(".", 80, function (left) {
     this.first = left;
 
