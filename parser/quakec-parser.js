@@ -7,9 +7,9 @@ class FeatureInfo {
         this.ternaryOperator = false;
         this.ternaryOperatorShorthand = false;
     }
-};
+}
 
-var lexer;
+let lexer;
 
 /**
  * Global parsing context object.
