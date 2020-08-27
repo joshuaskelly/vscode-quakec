@@ -408,42 +408,39 @@ class ProgramCacheItem {
 
     /**
      * Validate all Programs.
-     *
-     * @param {string?} stopAtUri An optional uri to stop validating programs.
      */
-    validateProgramCache(stopAtUri) {
+    validateProgramCache() {
         console.log("Validating AST Cache...");
         const start = new Date().getTime();
         this.documentsParsed = 0;
-        let done = false;
 
+        // Validate progs.src documents.
         if (this.sourceOrder) {
-            let scope = null;
+            console.log("  Validating progs.src sources");
+            let parentScope = null;
 
             for (let i = 0; i < this.sourceOrder.length; i++) {
                 const uri = this.sourceOrder[i];
 
-                console.log(`   Validating ${path.win32.basename(uri)}`);
-                const program = this.validateProgram(uri, scope);
+                const program = this.validateProgram(uri, parentScope);
 
+                // Chain document scopes.
                 if (program) {
-                    scope = program.scope;
-                }
-
-                if (uri === stopAtUri) {
-                    done = true;
-                    break;
+                    parentScope = program.scope;
                 }
             }
         }
 
-        if (!done) {
-            for (const uri in this.programs) {
-                this.validateProgram(uri, null);
+        // Validate workspace documents.
+        const remaining = Object.values(this.programs)
+        .map(({uri}) => uri)
+        .filter((uri) => !this.sourceOrder.includes(uri));
 
-                if (uri === stopAtUri) {
-                    return;
-                }
+        if (remaining) {
+            console.log("  Validating workspace sources");
+
+            for (const uri of remaining) {
+                this.validateProgram(uri);
             }
         }
 
@@ -465,7 +462,12 @@ class ProgramCacheItem {
         }
 
         if (programCacheItem.isValid) {
-            return programCacheItem.program;
+            const program = programCacheItem.program;
+            if (program.scope) {
+                program.scope.parent = parentScope || program.scope.parent;
+            }
+
+            return program;
         }
 
         if (programCacheItem && programCacheItem.program && programCacheItem.program.scope) {
@@ -485,6 +487,7 @@ class ProgramCacheItem {
             parentScope: parentScope,
             language: this.language
         };
+        console.log(`    Parsing ${path.win32.basename(uri)}`);
         const program = parser.parse(parseInfo);
 
         programCacheItem = new ProgramCacheItem(uri, true, program);
