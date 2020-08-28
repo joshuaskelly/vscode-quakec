@@ -177,18 +177,24 @@ class ProgramCacheItem {
      * @return {Location} A Location object.
      */
     getReferences(request) {
-        this.validateProgramCache();
         const program = this.getProgram(request.textDocument.uri);
 
         if (!program) {
             return [];
         }
 
-        const locations = program.getReferences(request.position, request.context.includeDeclaration);
+        const definition = program.getSymbolDefinition(request.position);
 
-        for (const location of locations) {
-            location.uri = this.toVSCodeUri(location.uri);
+        if (!definition) {
+            return [];
         }
+
+        const programs = this.sourceOrder.map((uri) => this.getProgram(uri));
+        const nestedSymbols = programs.map(({symbols}) => symbols);
+        const flattenedSymbols = nestedSymbols.reduce((result, symbolArray) => result.concat(symbolArray), []);
+        const targetSymbols = flattenedSymbols.filter(({value}) => value === definition.value);
+        const references = targetSymbols.filter((symbol) => symbol.scope.find(symbol.value) === definition && symbol !== definition);
+        const locations = references.map((symbol) => {return {uri: this.toVSCodeUri(symbol.scope.uri), range: symbol.range};});
 
         return locations;
     }
@@ -528,9 +534,6 @@ class ProgramCacheItem {
 
         programCacheItem.isValid = false;
         this.setProgramCacheItem(uri, programCacheItem);
-
-        // Remove references
-        program.invalidate();
 
         if (invalidateDownstream && this.sourceOrder.includes(uri)) {
             for (let i = this.sourceOrder.indexOf(uri); i < this.sourceOrder.length; i++) {

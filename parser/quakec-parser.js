@@ -194,8 +194,6 @@ class Scope {
         symbol.scope = Context.scope;
         symbol.type = Object.create(type);
 
-        Context.scope.reference(symbol);
-
         return symbol;
     }
 
@@ -275,22 +273,6 @@ class Scope {
 
         this.def[symbol.value] = symbol;
         symbol.reserved = true;
-    }
-
-    /**
-     * Add a reference to the given symbol.
-     *
-     * @param {Symbol} symbol
-     */
-    reference(symbol) {
-        if (symbol.arity === "name") {
-            const def = Context.scope.find(symbol.value);
-            if (!def.refs) {
-                def.refs = [];
-            }
-
-            def.refs.push(symbol);
-        }
     }
 
     constant(symbol) {
@@ -755,10 +737,6 @@ class Parse {
         }
 
         Context.symbols.push(Context.token);
-
-        if (prototypeObject.refs) {
-            Context.scope.reference(Context.token);
-        }
 
         return Context.token;
     }
@@ -1440,58 +1418,26 @@ class Program {
     }
 
     /**
-     * Gets the locations of all references to the symbol at the given position.
-     *
-     * @param {Position} position
-     * @param {boolean} includeDeclaration
-     *
-     * @returns {Location[]}
-     */
-    getReferences(position, includeDeclaration) {
-        const definition = this.getSymbolDefinition(position);
-        const result = [];
-
-        if (!definition || !definition.refs) {
-            return result;
-        }
-
-        for (const symbol of definition.refs) {
-            if (!includeDeclaration && symbol === definition) {
-                continue;
-            }
-
-            result.push(
-                {
-                    uri: symbol.scope.uri,
-                    range: symbol.range
-                }
-            );
-        }
-
-        return result;
-    }
-
-    /**
      * Gets the symbol at the given position
      *
      * @param {Position} position
      *
-     * @returns {Symbol}
+     * @returns {Symbol} A Symbol object.
      */
     getSymbolDefinition(position) {
-        const reference = this.getSymbol(position);
+        const symbol = this.getSymbol(position);
 
-        if (!reference) {
+        if (!symbol) {
             return null;
         }
 
-        const scope = reference.scope;
+        const scope = symbol.scope;
 
         if (!scope) {
             return null;
         }
 
-        const definition = scope.find(reference.value);
+        const definition = scope.find(symbol.value);
 
         if (!definition.scope) {
             return null;
@@ -1507,23 +1453,6 @@ class Program {
      */
     getErrors() {
         return this.errors;
-    }
-
-    invalidate() {
-        const nameSymbols = this.symbols.filter(symbol => symbol.arity === "name");
-
-        nameSymbols.forEach((symbol) => {
-            const definition = this.getSymbolDefinition(symbol.range.start);
-
-            if (!definition || !definition.refs) {
-                return;
-            }
-
-            const index = definition.refs.indexOf(symbol);
-            if (index > -1) {
-                definition.refs.splice(index, 1);
-            }
-        });
     }
 }
 
