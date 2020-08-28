@@ -19,6 +19,17 @@ class Position {
          */
         this.character = character;
     }
+
+    /**
+     * Checks Position object equality.
+     *
+     * @param {Position} lhs A Position object.
+     * @param {Position} rhs A Position object.
+     * @return {boolean} True if given Position objects are equal.
+     */
+    static isEqual(lhs, rhs) {
+        return lhs.line === rhs.line && lhs.character === rhs.character;
+    }
 }
 
 /**
@@ -54,6 +65,10 @@ class Range {
             return false;
         }
         else if (position.character > this.end.character) {
+            return false;
+        }
+
+        if (Position.isEqual(position, this.end)) {
             return false;
         }
 
