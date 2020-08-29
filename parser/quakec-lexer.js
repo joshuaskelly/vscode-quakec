@@ -54,9 +54,10 @@ const new_lexer = function() {
     lexer.addRule(/'\s*-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s*'/, process_lexeme("vector"));
     lexer.addRule(/#[0-9]+/, process_lexeme("builtin"));
     lexer.addRule(/\.?(void|float|vector|string|entity|\$frame)\b/, process_lexeme("type"));
-    lexer.addRule(/[A-Za-z_]+[A-Za-z0-9_]*/, process_lexeme("name"));
+    lexer.addRule(/[A-Za-z_$]+[A-Za-z0-9_]*/, process_lexeme("name"));
     lexer.addRule(/(&&|\|\||<=|>=|==|!=|!|\*|\/|-|\+|=|\.|,|<|>|&|\||;|\(|\)|\[|\]|\{|\}|\$)/, process_lexeme("operator"));
-    lexer.addRule(/\$(cd|origin|base|skin|modelname|name|flags|scale|frame|framegroupstart|framegroupend|spritename|type|load).*/, process_lexeme());
+    lexer.addRule(/\$(cd|origin|base|skin|modelname|name|flags|scale|framegroupstart|framegroupend|spritename|type|load)\b.*/, process_lexeme());
+    lexer.addRule(/\$frame\s+[0-9].*/, process_lexeme());
     lexer.addRule(/[\s]+/, process_lexeme());
     lexer.addRule(/./, process_lexeme());
 

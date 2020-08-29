@@ -1016,7 +1016,7 @@ Define.infix("-", 50, function(left) {
     this.arity = "binary";
 
     if (Context.language === "qcc") {
-        if (this.second.arity === "literal") {
+        if (this.second && this.second.arity === "literal") {
             const s = this.range.end;
             const e = this.second.range.start;
             if (s.line === e.line && e.character === s.character) {
@@ -1158,6 +1158,38 @@ Define.definition(".float");
 Define.definition(".vector");
 Define.definition(".string");
 Define.definition(".entity");
+
+Define.definition(
+    "$frame",
+    function() {
+        Context.token.error("$frame is not a valid statement.");
+    },
+    function() {
+        Context.token.error("$frame is not a valid type");
+    },
+    function() {
+        while (true) {
+            const n = Context.token;
+
+            if (n.arity !== "name") {
+                break;
+            }
+
+            n.value = `$${n.value}`;
+
+            if (Context.scope.def[n.value]) {
+                delete Context.scope.def[n.value];
+            }
+
+            Context.scope.define(n, this);
+            Parse.advance();
+
+            if (Context.token.arity === "literal" && Context.token.type.value === "float") {
+                Parse.advance();
+            }
+        }
+    }
+);
 
 Define.statement("while", function() {
     Parse.advance("(");
