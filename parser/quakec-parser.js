@@ -998,7 +998,6 @@ Define.symbol(")");
 Define.symbol("}");
 Define.symbol("[");
 Define.symbol("]");
-Define.symbol("$");
 Define.symbol("else");
 
 Define.infix("+", 50);
