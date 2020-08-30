@@ -1228,6 +1228,8 @@ Define.definition(
         Context.token.error("$frame is not a valid type");
     },
     function() {
+        let frameType = null;
+
         while (true) {
             const n = Context.token;
 
@@ -1235,22 +1237,27 @@ Define.definition(
                 break;
             }
 
-            if (n.arity !== "name") {
+            if (n.arity !== "name" && n.arity !== "literal") {
                 break;
             }
 
-            n.value = `$${n.value}`;
-
-            if (Context.scope.def[n.value]) {
-                delete Context.scope.def[n.value];
+            if (!frameType) {
+                frameType = n.arity;
+            } else if (frameType !== n.arity) {
+                Context.token.error("Mixed literals and names in frame definitions are invalid.");
             }
 
-            Context.scope.define(n, this);
+            if (n.arity === "name") {
+                n.value = `$${n.value}`;
+
+                if (Context.scope.def[n.value]) {
+                    delete Context.scope.def[n.value];
+                }
+
+                Context.scope.define(n, this);
+            }
+
             Parse.advance();
-
-            if (Context.token.arity === "literal" && Context.token.type.value === "float") {
-                Parse.advance();
-            }
         }
     }
 );
