@@ -1159,6 +1159,32 @@ Define.definition(".vector");
 Define.definition(".string");
 Define.definition(".entity");
 
+Define.definition("$frame",
+    function() {
+        Context.token.error("$frame is not a valid statement.");
+    },
+    function() {
+        Context.token.error("$frame is not a valid type");
+    },
+    function() {
+        while (true) {
+            const n = Context.token;
+
+            if (n.arity !== "name") {
+                break;
+            }
+
+            Context.scope.define(n, this);
+            Parse.advance();
+
+            if (Context.token.arity === "literal" && Context.token.type.value === "float") {
+                Parse.advance();
+            }
+        }
+    }
+);
+
+
 Define.statement("while", function() {
     Parse.advance("(");
     this.first = Parse.expression(0);
