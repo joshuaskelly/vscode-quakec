@@ -1,5 +1,5 @@
 const assert = require("assert");
-const Lexer = require("../quakec-lexer").Lexer;
+const Lexer = require("../src/quakec-lexer").Lexer;
 
 describe("Lexer", function() {
     let lexer;

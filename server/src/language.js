@@ -6,7 +6,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const parser = require("../../parser/quakec-parser");
+const parser = require("../../parser/src/quakec-parser");
 const { TextDocument } = require('vscode-languageserver-textdocument');
 
 /** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic*/
@@ -15,8 +15,8 @@ const { TextDocument } = require('vscode-languageserver-textdocument');
 /** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams*/
 /** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams*/
 /** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams*/
-/** @typedef {import('../../parser/quakec-parser').Program} Program */
-/** @typedef {import('../../parser/quakec-parser').Scope} Scope */
+/** @typedef {import('../../parser/src/quakec-parser').Program} Program */
+/** @typedef {import('../../parser/src/quakec-parser').Scope} Scope */
 
 class DocumentCacheItem {
     /**

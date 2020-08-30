@@ -1,6 +1,6 @@
 const assert = require('assert');
-const Position = require('../quakec-common').Position;
-const Range = require('../quakec-common').Range;
+const Position = require('../src/quakec-common').Position;
+const Range = require('../src/quakec-common').Range;
 
 describe("Common", function() {
     describe("Range", function() {

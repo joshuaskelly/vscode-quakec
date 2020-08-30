@@ -1,5 +1,5 @@
 const assert = require("assert");
-const qparse = require("../quakec-parser").parse;
+const qparse = require("../src/quakec-parser").parse;
 
 const parse = function(program) {
     return qparse({ program: program });
