@@ -1216,8 +1216,7 @@ for (const directive of ignoreDirectives) {
     );
 }
 
-Define.definition(
-    "$frame",
+Define.definition("$frame",
     function() {
         Context.token.error("$frame is not a valid statement.");
     },
