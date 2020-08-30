@@ -171,11 +171,6 @@ describe("Parser", function() {
                 const actual = parse(program);
                 assert.noErrors(actual);
             });
-            it("Should be able to define a frame with optional value", function() {
-                const program = `$frame frame1 1.0`;
-                const actual = parse(program);
-                assert.noErrors(actual);
-            });
             it("Should be able to define a frame function", function() {
                 const program = `void() framename = [$frame1, nextthink] {};`;
                 const actual = parse(program);

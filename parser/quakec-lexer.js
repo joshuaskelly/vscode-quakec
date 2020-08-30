@@ -1,70 +1,70 @@
-const doken = require("doken");
+const Lexer = require("lex");
 const common = require("./quakec-common");
 const Position = common.Position;
 const Range = common.Range;
 
-class QCToken
-{
-    constructor(token)
-    {
-        /** @type {string} */
-        this.type = token.type;
-        /** @type {string} */
-        this.value = token.value;
-        this.position = new Position(token.row, token.col);
 
-        const end = new Position(this.position.line, this.position.character);
+const new_lexer = function() {
+    const lexer = new Lexer();
 
-        for (let i = 0; i < token.length; i++) {
-            if (token.value[i] === '\n') {
-                end.character = 0;
-                end.line++;
-            } else {
-                end.character++;
+    let line = 0;
+    let character = 0;
+    let last_position = new Position(line, character);
+    let current_position = new Position(line, character);
+
+    const new_token = function(type, value) {
+        return {
+            type: type,
+            value: value,
+            position: last_position,
+            range: new Range(last_position, current_position)
+        };
+    };
+
+    const update_position = function(str) {
+        last_position = new Position(line, character);
+
+        for (let i = 0; i < str.length; i++) {
+            const c = str[i];
+            if (c === '\n') {
+                line += 1;
+                character = 0;
+            }
+            else {
+                character += 1;
             }
         }
 
-        this.range = new Range(this.position, end);
-    }
-}
+        current_position = new Position(line, character);
+    };
 
-class QCLexer
-{
-    constructor()
-    {
-        this._tokenizer = doken.createTokenizer({
-            rules: [
-                doken.regexRule("_comment", /\/\*[\s\S]*?\*\//y, { lineBreaks: true }),
-                doken.regexRule("_comment", /\/\/.*/y),
-                doken.regexRule("_whitespace", /\s+/y, { lineBreaks: true }),
-                doken.regexRule("float", /[0-9]+(\.[0-9]+)?/y),
-                doken.regexRule("string", /"([^"]|\\\S)*"/y),
-                doken.regexRule("vector", /'\s*-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s*'/y),
-                doken.regexRule("builtin", /#[0-9]+/y),
-                doken.regexRule("type", /\.?(void|float|vector|string|entity)\b/y),
-                doken.regexRule("name", /\$?[A-Za-z_]+[A-Za-z0-9_]*/y),
-                doken.regexRule("operator", /(&&|\|\||<=|>=|==|!=|!|\*|\/|-|\+|=|\.|,|<|>|&|\||;|\(|\)|\[|\]|\{|\})/y)
-            ],
-            strategy: "longest"
-        });
+    const process_lexeme = function(type) {
+        return function(lexeme) {
+            update_position(lexeme);
 
-        this._lexer = null;
-    }
+            if (type) {
+                return new_token(type, lexeme);
+            }
+        };
+    };
 
-    /** @type {string} input */
-    setInput(input)
-    {
-        this._lexer = this._tokenizer(input);
-    }
+    lexer.addRule(/\/\*[\s\S]*?\*\//, process_lexeme());
+    lexer.addRule(/\/\/.*/, process_lexeme());
+    lexer.addRule(/\s+/, process_lexeme());
+    lexer.addRule(/[0-9]+(\.[0-9]+)?/, process_lexeme("float"));
+    lexer.addRule(/"([^"]|\\\S)*"/, process_lexeme("string"));
+    lexer.addRule(/'\s*-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s+-?[0-9]+(\.[0-9]+)?\s*'/, process_lexeme("vector"));
+    lexer.addRule(/#[0-9]+/, process_lexeme("builtin"));
+    lexer.addRule(/\.?(void|float|vector|string|entity)\b/, process_lexeme("type"));
+    lexer.addRule(/\$?[A-Za-z_]+[A-Za-z0-9_]*/, process_lexeme("name"));
+    lexer.addRule(/(&&|\|\||<=|>=|==|!=|!|\*|\/|-|\+|=|\.|,|<|>|&|\||;|\(|\)|\[|\]|\{|\})/, process_lexeme("operator"));
+    lexer.addRule(/./, process_lexeme());
 
-    lex()
-    {
-        const token = this._lexer.next();
-        return !token.done ? new QCToken(token.value) : null;
-    }
-}
+    return lexer;
+};
 
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
-    exports.QCLexer = QCLexer;
-    exports.Lexer = () => new QCLexer();
+    exports.Lexer = function() {
+        return new_lexer();
+    };
 }

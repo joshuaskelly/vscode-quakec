@@ -1,9 +1,6 @@
 const Lexer = require("./quakec-lexer").Lexer;
 const Range = require("./quakec-common").Range;
 
-/** @typedef {import("./quakec-lexer").QCLexer} QCLexer */
-
-/** @type {QCLexer} */
 let lexer;
 
 /**
