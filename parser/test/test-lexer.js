@@ -583,11 +583,11 @@ describe("Lexer", function() {
         it("Should handle single line comments", function() {
             const program = `
             // This is a comment
-            const i = 0;
+            var i = 0;
             `;
             const expected = {
                 type: "name",
-                value: "const",
+                value: "var",
                 position: {
                     line: 2,
                     character: 12
@@ -603,12 +603,12 @@ describe("Lexer", function() {
             /*
              * This is a comment!
              */
-            const i = 0;
+            var i = 0;
             /* This is also a comment. */
             `;
             const expected = {
                 type: "name",
-                value: "const",
+                value: "var",
                 position: {
                     line: 4,
                     character: 12
@@ -637,7 +637,7 @@ describe("Lexer", function() {
 
             assert.tokensEqual(expected, actual);
         });
-        it("Should handle valid frame definitions", function() {
+        it("Should handle frame definitions", function() {
             const program = `$frame frame1 frame2`;
             const expected = [ {
                 type: "name",
