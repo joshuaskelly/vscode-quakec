@@ -619,21 +619,6 @@ describe("Lexer", function() {
 
             assert.tokensEqual(expected, actual);
         });
-        it("Should handle multiline comments", function() {
-            const program = "// I am multi line \\\r\nand should be ignored \\ayooo\r\nconst i = 0;";
-            const expected = {
-                type: "name",
-                value: "const",
-                position: {
-                    line: 2,
-                    character: 0
-                }
-            };
-            lexer.setInput(program);
-            const actual = lexer.lex();
-
-            assert.tokensEqual(expected, actual);
-        });
     });
     describe("ModelGen", function() {
         it("Should handle empty frame definitions", function() {

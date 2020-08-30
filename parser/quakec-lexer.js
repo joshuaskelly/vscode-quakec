@@ -35,7 +35,7 @@ class QCLexer
         this._tokenizer = doken.createTokenizer({
             rules: [
                 doken.regexRule("_comment", /\/\*[\s\S]*?\*\//y, { lineBreaks: true }),
-                doken.regexRule("_comment", /\/\/(?:\\\r?\n|[^\r\n])*(?:\r?\n|$)/y, { lineBreaks: true }),
+                doken.regexRule("_comment", /\/\/.*/y),
                 doken.regexRule("_whitespace", /\s+/y, { lineBreaks: true }),
                 doken.regexRule("float", /[0-9]+(\.[0-9]+)?/y),
                 doken.regexRule("string", /"([^"]|\\\S)*"/y),
