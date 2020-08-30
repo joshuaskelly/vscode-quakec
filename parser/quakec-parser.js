@@ -576,6 +576,9 @@ class Define {
                 if (name.arity !== "name") {
                     name.error("Expected a new variable name.");
                     return;
+                } else if (name.value[0] === '$') {
+                    name.error("Frame macros cannot be used as variable names.");
+                    return;
                 }
 
                 Context.scope.define(name, this);
@@ -1172,8 +1175,25 @@ Define.definition(".entity");
 
 const ignoreDirectives = [
     '$modelname',
+    '$base',
+    '$cd',
+    '$sync',
+    '$origin',
+    '$eyeposition',
+    '$scale',
+    '$flags',
+    '$skin',
+    '$skingroupstart',
+    '$skingroupend',
     '$framegroupstart',
-    '$framegroupend'
+    '$framegroupend',
+    // sprgen
+    '$spritename',
+    '$type',
+    '$beamlength',
+    '$load',
+    '$groupstart',
+    '$groupend'
 ];
 
 for (const directive of ignoreDirectives) {
