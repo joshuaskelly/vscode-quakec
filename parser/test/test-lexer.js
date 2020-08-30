@@ -598,7 +598,7 @@ describe("Lexer", function() {
 
             assert.tokensEqual(expected, actual);
         });
-        it("Should handle block comments", function() {
+        it("Should handle multiline comments", function() {
             const program = `
             /*
              * This is a comment!
