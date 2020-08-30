@@ -598,7 +598,7 @@ describe("Lexer", function() {
 
             assert.tokensEqual(expected, actual);
         });
-        it("Should handle multiline comments", function() {
+        it("Should handle block comments", function() {
             const program = `
             /*
              * This is a comment!
@@ -619,12 +619,27 @@ describe("Lexer", function() {
 
             assert.tokensEqual(expected, actual);
         });
+        it("Should handle multiline comments", function() {
+            const program = "// I am multi line \\\r\nand should be ignored \\ayooo\r\nconst i = 0;";
+            const expected = {
+                type: "name",
+                value: "const",
+                position: {
+                    line: 2,
+                    character: 0
+                }
+            };
+            lexer.setInput(program);
+            const actual = lexer.lex();
+
+            assert.tokensEqual(expected, actual);
+        });
     });
     describe("ModelGen", function() {
         it("Should handle empty frame definitions", function() {
             const program = `$frame`;
             const expected = {
-                type: "type",
+                type: "name",
                 value: "$frame",
                 position: {
                     line: 0,
@@ -639,85 +654,33 @@ describe("Lexer", function() {
         });
         it("Should handle valid frame definitions", function() {
             const program = `$frame frame1 frame2`;
-            const expected = {
-                type: "type",
+            const expected = [ {
+                type: "name",
                 value: "$frame",
                 position: {
                     line: 0,
                     character: 0
                 }
-            };
+            }, {
+                type: "name",
+                value: "frame1",
+                position: {
+                    line: 0,
+                    character: 7
+                }
+            }, {
+                type: "name",
+                value: "frame2",
+                position: {
+                    line: 0,
+                    character: 14
+                }
+            } ];
 
             lexer.setInput(program);
-            const actual = lexer.lex();
-
-            assert.tokensEqual(expected, actual);
-        });
-        it("Should ignore model name definitions", function() {
-            const program = `$modelname name`;
             const actual = all(program);
 
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore sprite name definitions", function() {
-            const program = `$spritename name`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore type definitions", function() {
-            const program = `$type type`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore load definitions", function() {
-            const program = `$load /test/sprites`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore name definitions", function() {
-            const program = `$name armor`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore directory definitions", function() {
-            const program = `$cd /test/models`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore flag definitions", function() {
-            const program = `$flags 8`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore origin definitions", function() {
-            const program = `$origin 0 0 0`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore scale definitions", function() {
-            const program = `$scale 1 1 1`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore base definitions", function() {
-            const program = `$base start`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
-        });
-        it("Should ignore skin definitions", function() {
-            const program = `$skin test`;
-            const actual = all(program);
-
-            assert.equal(actual.length, 0);
+            assert.tokenArraysEqual(expected, actual);
         });
     });
 });

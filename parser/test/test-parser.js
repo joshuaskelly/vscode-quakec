@@ -167,7 +167,7 @@ describe("Parser", function() {
         });
         describe("Frames", function() {
             it("Should be able to define frames", function() {
-                const program = `$frame frame1 frame2 frame3`;
+                const program = `$frame frame1 frame2 frame3\n$frame frame4 frame5 frame6`;
                 const actual = parse(program);
                 assert.noErrors(actual);
             });
@@ -630,6 +630,28 @@ describe("Parser", function() {
                     end: {
                         line: 2,
                         character: 37
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a $frame directive spans multiple lines", function() {
+            const program = `$frame frame1 frame2 frame3\nname\n$frame frame4 frame5 frame6`;
+            const actual = parse(program);
+            assert.equal(actual.errors.length, 1);
+
+            const expectedError = {
+                message: "[qcc] Unexpected token: 'name'",
+                range: {
+                    start: {
+                        line: 1,
+                        character: 0
+                    },
+                    end: {
+                        line: 1,
+                        character: 4
                     }
                 },
                 severity: 1

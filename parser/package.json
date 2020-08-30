@@ -10,7 +10,7 @@
     "url": "https://github.com/JoshuaSkelly/vscode-quakec"
   },
   "dependencies": {
-    "lex": "^1.7.9"
+    "doken": "^1.0.2"
   },
   "scripts": {
     "test": "mocha"

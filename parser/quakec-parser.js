@@ -1,6 +1,9 @@
 const Lexer = require("./quakec-lexer").Lexer;
 const Range = require("./quakec-common").Range;
 
+/** @typedef {import("./quakec-lexer").QCLexer} QCLexer */
+
+/** @type {QCLexer} */
 let lexer;
 
 /**
@@ -681,7 +684,7 @@ class Parse {
 
         const nextToken = lexer.lex();
 
-        if (nextToken === undefined) {
+        if (!nextToken) {
             Context.token = Context.symbol_table['(end)'];
             Context.token.range = new Range(
                 {line: -1, character: -1},
@@ -696,7 +699,16 @@ class Parse {
         arity = nextToken.type;
 
         if (arity === "name") {
-            prototypeObject = Context.scope.find(value);
+            if (value[0] === '$') {
+                if (value in Context.symbol_table) {
+                    arity = "directive";
+                    prototypeObject = Context.symbol_table[value];
+                }
+            }
+
+            if (!prototypeObject) {
+                prototypeObject = Context.scope.find(value);
+            }
         }
         else if (arity === "operator") {
             prototypeObject = Context.symbol_table[value];
@@ -1158,6 +1170,35 @@ Define.definition(".vector");
 Define.definition(".string");
 Define.definition(".entity");
 
+const ignoreDirectives = [
+    '$modelname',
+    '$framegroupstart',
+    '$framegroupend'
+];
+
+for (const directive of ignoreDirectives) {
+    Define.definition(
+        directive,
+        function() {
+            Context.token.error(`${directive} is not a valid statement.`);
+        },
+        function() {
+            Context.token.error(`${directive} is not a valid type`);
+        },
+        function() {
+            while (true) {
+                Parse.advance();
+
+                const n = Context.token;
+    
+                if (this.range.start.line !== n.range.start.line) {
+                    break;
+                }
+            }
+        }
+    );
+}
+
 Define.definition(
     "$frame",
     function() {
@@ -1169,6 +1210,10 @@ Define.definition(
     function() {
         while (true) {
             const n = Context.token;
+
+            if (this.range.start.line !== n.range.start.line) {
+                break;
+            }
 
             if (n.arity !== "name") {
                 break;
