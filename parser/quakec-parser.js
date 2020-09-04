@@ -200,7 +200,7 @@ class Scope {
     /**
      * Finds the definition of a name.
      *
-     * @param {Symbol} symbol
+     * @param {string} symbol
      *
      * @returns {Symbol}
      */
