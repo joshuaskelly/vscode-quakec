@@ -52,9 +52,8 @@ let Context = {
 
 class Symbol {
     constructor() {
-        this.std = null;
-        this.ded = null;
-        this.tyd = null;
+        /** @type {string} */
+        this.arity;
     }
     /**
      * Null denotation parser. Does not care about symbols to the left. Used for parsing literals
@@ -275,6 +274,7 @@ class Scope {
         symbol.reserved = true;
     }
 
+    /** @param {Symbol} symbol */
     constant(symbol) {
         if (symbol.arity === "name") {
             const def = Context.scope.find(symbol.value);
@@ -1224,8 +1224,6 @@ Define.definition("$frame",
         Context.token.error("$frame is not a valid type");
     },
     function() {
-        let frameType = null;
-
         while (true) {
             const n = Context.token;
 
@@ -1237,10 +1235,8 @@ Define.definition("$frame",
                 break;
             }
 
-            if (!frameType) {
-                frameType = n.arity;
-            } else if (frameType !== n.arity) {
-                Context.token.error("Mixed literals and names in frame definitions are invalid.");
+            if (n.arity !== "name") {
+                Context.token.error("Must be a name.");
             }
 
             if (n.arity === "name") {
