@@ -25,8 +25,8 @@
 			{
 				"id": "quakec",
 				"aliases": [
-					"Quake-C",
 					"QuakeC",
+					"Quake-C",
 					"qcc"
 				],
 				"configuration": "./language-configuration.json",
