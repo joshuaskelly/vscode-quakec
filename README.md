@@ -1,5 +1,5 @@
 # VS Code QuakeC Extension
-[![Build Status](https://img.shields.io/travis/joshuaskelly/vscode-quakec/master.svg?label=tests)](https://travis-ci.org/joshuaskelly/vscode-quakec)
+![build workflow](https://github.com/joshuaskelly/vscode-quakec/actions/workflows/build.yml/badge.svg)
 
 ## How to run locally
 * `npm install` to initialize the extension and the server
