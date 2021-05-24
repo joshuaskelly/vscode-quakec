@@ -57,7 +57,7 @@
 	},
 	"scripts": {
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ../parser && npm install && cd ..",
-		"test": "./node_modules/mocha/bin/mocha */test/**/*.js"
+		"test": "node_modules/mocha/bin/mocha */test/**/*.js"
 	},
 	"devDependencies": {
 		"mocha": "^8.1.1"
