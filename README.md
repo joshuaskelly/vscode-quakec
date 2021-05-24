@@ -8,7 +8,6 @@ A Visual Studio Code extension with support for the QuakeC language (currently o
 - Language Standards: Vanilla QuakeC
 
 ## Questions, issues, feature requests, and contributions
-- If you have a question about how to accomplish something with the extension, please ask on Stack Overflow
 - If you come across a problem with the extension, please [file an issue](https://github.com/joshuaskelly/vscode-quakec).
 - Contributions are always welcome!
 - Any and all feedback is appreciated and welcome!
