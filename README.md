@@ -1,6 +1,15 @@
 # VS Code QuakeC Extension
-![build workflow](https://github.com/joshuaskelly/vscode-quakec/actions/workflows/build.yml/badge.svg)
 
-## How to run locally
-* `npm install` to initialize the extension and the server
-* open this folder in VS Code. In the Debug viewlet, run 'Launch Client' from drop-down to launch the extension and attach to the extension.
+A Visual Studio Code extension with support for the QuakeC language (currently only vanilla QuakeC is supported), including features such as IntelliSense, linting, and code navigation.
+
+## Features
+- Intellisense: Code navigation and syntax highlighting.
+- Linting: Static code analysis.
+- Language Standards: Vanilla QuakeC
+
+## Questions, issues, feature requests, and contributions
+- If you have a question about how to accomplish something with the extension, please ask on Stack Overflow
+- If you come across a problem with the extension, please [file an issue](https://github.com/joshuaskelly/vscode-quakec).
+- Contributions are always welcome!
+- Any and all feedback is appreciated and welcome!
+- If someone has already filed an issue that encompasses your feedback, please leave a 👍/👎 reaction on the issue
