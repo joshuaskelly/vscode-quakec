@@ -15,7 +15,7 @@ suite('Language Server Test Suite', () => {
             })
             .then(() => {
                 // Give extension a chance to load.
-                return new Promise((resolve) => setTimeout(resolve, 500));
+                return new Promise((resolve) => setTimeout(resolve, 1000));
             })
             .then(() => {
                 // Verify extension is intalled and loaded.
