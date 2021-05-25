@@ -58,10 +58,11 @@
 	"scripts": {
 		"deploy": "vsce publish --yarn",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ../parser && npm install && cd ..",
-		"test": "mocha */test/**/*.js"
+		"test": "mocha */test/**/*.js && node ./server/src/test/runTests.js"
 	},
 	"devDependencies": {
 		"mocha": "^8.4.0",
-		"vsce": "^1.88.0"
+		"vsce": "^1.88.0",
+		"vscode-test": "^1.5.2"
 	}
 }

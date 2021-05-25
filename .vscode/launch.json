@@ -19,19 +19,35 @@
             "outFiles": ["${workspaceRoot}/server/src/**/*.js"]
         },
         {
-            "name": "Run Tests",
+            "name": "Unit Tests",
             "type": "node",
             "request": "launch",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "stopOnEntry": false,
             "args": ["${workspaceRoot}/*/test/**/*.js", "--no-timeouts"],
             "cwd": "${workspaceRoot}"
-        }
+        },
+        {
+            "name": "Integration Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+              "${workspaceFolder}/server/src/test-fixtures",
+              "--disable-extensions",
+              "--extensionDevelopmentPath=${workspaceFolder}",
+              "--extensionTestsPath=${workspaceFolder}/server/src/test/suite/index.js"
+            ]
+          }
     ],
     "compounds": [
         {
-            "name": "Client + Server",
+            "name": "Client + Attach to Server",
             "configurations": ["Launch Client", "Attach to Server"]
+        },
+        {
+            "name": "Integration Tests + Attach to Server",
+            "configurations": ["Integration Tests", "Attach to Server"]
         }
     ]
 }
