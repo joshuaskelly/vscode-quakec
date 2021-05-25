@@ -1,5 +1,4 @@
 const assert = require('assert');
-const { EOL } = require('os');
 const vscode = require('vscode');
 const path = require('path');
 
@@ -49,7 +48,7 @@ suite('Language Server Test Suite', () => {
                 assert(content, 'Bad content');
 
                 const actual = content.value;
-                const expected = EOL + '```quakec' + EOL + 'void() bar' + EOL + '```' + EOL;
+                const expected = '\n```quakec\nvoid() bar\n```\n';
                 assert.strictEqual(
                     actual,
                     expected,
