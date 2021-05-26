@@ -1,6 +1,38 @@
 const Lexer = require("./quakec-lexer").Lexer;
 const Range = require("./quakec-common").Range;
 
+/** @typedef {"binarySubtractRequiresLeadingWhitespace"} LanguageFeatures */
+
+class FeatureInfo {
+    constructor() {
+        this.binarySubtractRequiresLeadingWhitespace = false;
+    }
+}
+
+/** 
+ * Feature handler callback.
+ * @callback FeatureHandler
+ * @param {boolean} supported Whether the support check passed or not.
+ */
+
+class Feature {
+    /**
+     * Call a handler function. 
+     * 
+     * @param {LanguageFeatures} languageFeature 
+     * @param {FeatureHandler} handler 
+     */
+    static check(languageFeature, handler = null) {
+        handler = handler || (supported => {
+            if (!supported) {
+                Context.symbols[Context.symbols.length - 2].error("Unsupported language feature: " + languageFeature);
+            }
+        });
+
+        handler(Context.features[languageFeature]);
+    }
+}
+
 let lexer;
 
 /**
@@ -47,7 +79,14 @@ let Context = {
      *
      * @type {string} language
      */
-    language: "qcc"
+    language: "qcc",
+
+    /**
+     * An object that holds feature flags.
+     * 
+     * @type {FeatureInfo} features
+     */
+    features: new FeatureInfo()
 };
 
 class Symbol {
@@ -1015,15 +1054,15 @@ Define.infix("-", 50, function(left) {
     this.second = Parse.expression(50);
     this.arity = "binary";
 
-    if (Context.language === "qcc") {
-        if (this.second.arity === "literal") {
+    Feature.check('binarySubtractRequiresLeadingWhitespace', supported => {
+        if (!supported && this.second.arity === "literal") {
             const s = this.range.end;
             const e = this.second.range.start;
             if (s.line === e.line && e.character === s.character) {
                 this.error("Missing whitespace for '-' operator.");
             }
         }
-    }
+    });
 
     return this;
 });
@@ -1313,7 +1352,8 @@ const parse = function(programInfo) {
         scope: null,
         symbols: [],
         errors: [],
-        language: programInfo.language || "qcc"
+        language: programInfo.language || "qcc",
+        features: programInfo.features || new FeatureInfo()
     };
 
     lexer.setInput(programInfo.program);
@@ -1485,5 +1525,6 @@ class Program {
 if (typeof require !== 'undefined' && typeof exports !== 'undefined') {
     exports.parse = parse;
     exports.Program = Program;
+    exports.FeatureInfo = FeatureInfo;
     exports.Scope = Scope;
 }

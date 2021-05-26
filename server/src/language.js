@@ -9,14 +9,15 @@ const path = require("path");
 const parser = require("../../parser/quakec-parser");
 const { TextDocument } = require('vscode-languageserver-textdocument');
 
-/** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic*/
-/** @typedef {import('vscode-languageserver').Hover} Hover*/
-/** @typedef {import('vscode-languageserver').Location} Location*/
-/** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams*/
-/** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams*/
-/** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams*/
+/** @typedef {import('vscode-languageserver').Diagnostic} Diagnostic */
+/** @typedef {import('vscode-languageserver').Hover} Hover */
+/** @typedef {import('vscode-languageserver').Location} Location */
+/** @typedef {import('vscode-languageserver').PublishDiagnosticsParams} PublishDiagnosticsParams */
+/** @typedef {import('vscode-languageserver').ReferenceParams} ReferenceParams */
+/** @typedef {import('vscode-languageserver').TextDocumentPositionParams} TextDocumentPositionParams */
 /** @typedef {import('../../parser/quakec-parser').Program} Program */
 /** @typedef {import('../../parser/quakec-parser').Scope} Scope */
+/** @typedef {import('../../parser/quakec-parser').FeatureInfo} FeatureInfo */
 
 class DocumentCacheItem {
     /**
@@ -51,7 +52,7 @@ class ProgramCacheItem {
 }
 
  /** @class SourceDocumentManager */
- module.exports.SourceDocumentManager = class SourceDocumentManager {
+module.exports.SourceDocumentManager = class SourceDocumentManager {
     constructor(root) {
         /**
          * Path to the workspace root directory.
@@ -256,13 +257,45 @@ class ProgramCacheItem {
     }
 
     /**
-     * Set language.
-     *
-     * @param {string} language
+     * Check whether or not the features have changed.
+     * 
+     * @param {FeatureInfo} features 
+     * @return {boolean}
      */
-    setLanguage(language) {
+    haveFeaturesChanged(features) {
+        if (!this.features) {
+            return true;
+        }
+
+        for (const key of Object.keys(features)) {
+            if (this.features[key] !== features[key]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Set the language and features settings of the parser.
+     * 
+     * @param {string} language 
+     * @param {FeatureInfo} features 
+     */
+    setLanguageAndFeatures(language, features) {
+        let requireValidation = false;
+
         if (this.language !== language) {
             this.language = language;
+            requireValidation = true;
+        }
+
+        if (this.haveFeaturesChanged(features)) {
+            this.features = features;
+            requireValidation = true;
+        }
+
+        if (requireValidation) {
             this.invalidateProgramCache();
             this.validateProgramCache();
         }
@@ -491,7 +524,8 @@ class ProgramCacheItem {
             program: document.getText(),
             uri: uri,
             parentScope: parentScope,
-            language: this.language
+            language: this.language,
+            features: this.features
         };
         console.log(`    Parsing ${path.win32.basename(uri)}`);
         const program = parser.parse(parseInfo);

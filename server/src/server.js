@@ -11,6 +11,8 @@ const {
 const { TextDocument } = require('vscode-languageserver-textdocument');
 const { SourceDocumentManager } = require('./language');
 
+/** @typedef {import('../../parser/quakec-parser.js').FeatureInfo} FeatureInfo */
+
 const connection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
 const documents = new TextDocuments(TextDocument);
 documents.listen(connection);
@@ -41,6 +43,8 @@ documents.onDidChangeContent((change) => {
 
 /** @type {string} */
 let language;
+/** @type {FeatureInfo} */
+let features;
 
 const sendDiagnostics = function() {
 	const diagnostics = documentManager.getDiagnosticsAll();
@@ -50,10 +54,30 @@ const sendDiagnostics = function() {
 	}
 };
 
+/** @return {FeatureInfo} */
+const createFeatures = function(language) {
+	switch (language) {
+		case 'qcc':
+			return {
+				binarySubtractRequiresLeadingWhitespace: true
+			};
+		default:
+			return { };
+	}
+};
+
 connection.onDidChangeConfiguration((change) => {
 	const settings = change.settings;
 	language = settings.quakec.language || "qcc";
-	documentManager.setLanguage(language);
+	features = createFeatures(language);
+
+	if (settings.quakec.features) {
+		for (const key of Object.keys(settings.quakec.features)) {
+			features[key] = settings.quakec.features[key];
+		}
+	}
+
+	documentManager.setLanguageAndFeatures(language, features);
 	sendDiagnostics();
 });
 

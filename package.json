@@ -50,7 +50,19 @@
 					"scope": "resource",
 					"type": "string",
 					"default": "qcc",
-					"description": "Controls parser support for various language features."
+					"description": "Automatically assigns defaults for compiler feature flags based on a specific language."
+				},
+				"quakec.features": {
+					"scope": "resource",
+					"type": "object",
+					"description": "Feature flags for specific parser features.",
+					"properties": {
+						"binarySubtractRequiresLeadingWhitespace": {
+							"type": "boolean",
+							"default": "false",
+							"description": "Whether or not the binary - operator requires a whitespace before the right-hand operand if it is a literal"
+						}
+					}
 				}
 			}
 		}
