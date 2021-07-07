@@ -52,9 +52,8 @@ let Context = {
 
 class Symbol {
     constructor() {
-        this.std = null;
-        this.ded = null;
-        this.tyd = null;
+        /** @type {string} */
+        this.arity;
     }
     /**
      * Null denotation parser. Does not care about symbols to the left. Used for parsing literals
@@ -200,7 +199,7 @@ class Scope {
     /**
      * Finds the definition of a name.
      *
-     * @param {Symbol} symbol
+     * @param {string} symbol
      *
      * @returns {Symbol}
      */
@@ -275,6 +274,7 @@ class Scope {
         symbol.reserved = true;
     }
 
+    /** @param {Symbol} symbol */
     constant(symbol) {
         if (symbol.arity === "name") {
             const def = Context.scope.find(symbol.value);
@@ -573,6 +573,9 @@ class Define {
                 if (name.arity !== "name") {
                     name.error("Expected a new variable name.");
                     return;
+                } else if (name.value[0] === '$') {
+                    name.error("Frame macros cannot be used as variable names.");
+                    return;
                 }
 
                 Context.scope.define(name, this);
@@ -681,7 +684,7 @@ class Parse {
 
         const nextToken = lexer.lex();
 
-        if (nextToken === undefined) {
+        if (!nextToken) {
             Context.token = Context.symbol_table['(end)'];
             Context.token.range = new Range(
                 {line: -1, character: -1},
@@ -696,7 +699,16 @@ class Parse {
         arity = nextToken.type;
 
         if (arity === "name") {
-            prototypeObject = Context.scope.find(value);
+            if (value[0] === '$') {
+                if (value in Context.symbol_table) {
+                    arity = "directive";
+                    prototypeObject = Context.symbol_table[value];
+                }
+            }
+
+            if (!prototypeObject) {
+                prototypeObject = Context.scope.find(value);
+            }
         }
         else if (arity === "operator") {
             prototypeObject = Context.symbol_table[value];
@@ -998,7 +1010,6 @@ Define.symbol(")");
 Define.symbol("}");
 Define.symbol("[");
 Define.symbol("]");
-Define.symbol("$");
 Define.symbol("else");
 
 Define.infix("+", 50);
@@ -1016,7 +1027,7 @@ Define.infix("-", 50, function(left) {
     this.arity = "binary";
 
     if (Context.language === "qcc") {
-        if (this.second.arity === "literal") {
+        if (this.second && this.second.arity === "literal") {
             const s = this.range.end;
             const e = this.second.range.start;
             if (s.line === e.line && e.character === s.character) {
@@ -1159,6 +1170,52 @@ Define.definition(".vector");
 Define.definition(".string");
 Define.definition(".entity");
 
+const ignoreDirectives = [
+    '$modelname',
+    '$base',
+    '$cd',
+    '$sync',
+    '$origin',
+    '$eyeposition',
+    '$scale',
+    '$flags',
+    '$skin',
+    '$skingroupstart',
+    '$skingroupend',
+    '$framegroupstart',
+    '$framegroupend',
+    // sprgen
+    '$spritename',
+    '$type',
+    '$beamlength',
+    '$load',
+    '$groupstart',
+    '$groupend'
+];
+
+for (const directive of ignoreDirectives) {
+    Define.definition(
+        directive,
+        function() {
+            Context.token.error(`${directive} is not a valid statement.`);
+        },
+        function() {
+            Context.token.error(`${directive} is not a valid type`);
+        },
+        function() {
+            while (true) {
+                Parse.advance();
+
+                const n = Context.token;
+    
+                if (this.range.start.line !== n.range.start.line) {
+                    break;
+                }
+            }
+        }
+    );
+}
+
 Define.definition("$frame",
     function() {
         Context.token.error("$frame is not a valid statement.");
@@ -1170,20 +1227,32 @@ Define.definition("$frame",
         while (true) {
             const n = Context.token;
 
-            if (n.arity !== "name") {
+            if (this.range.start.line !== n.range.start.line) {
                 break;
             }
 
-            Context.scope.define(n, this);
-            Parse.advance();
-
-            if (Context.token.arity === "literal" && Context.token.type.value === "float") {
-                Parse.advance();
+            if (n.arity !== "name" && n.arity !== "literal") {
+                break;
             }
+
+            if (n.arity !== "name") {
+                Context.token.error("Must be a name.");
+            }
+
+            if (n.arity === "name") {
+                n.value = `$${n.value}`;
+
+                if (Context.scope.def[n.value]) {
+                    delete Context.scope.def[n.value];
+                }
+
+                Context.scope.define(n, this);
+            }
+
+            Parse.advance();
         }
     }
 );
-
 
 Define.statement("while", function() {
     Parse.advance("(");

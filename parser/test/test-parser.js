@@ -167,12 +167,7 @@ describe("Parser", function() {
         });
         describe("Frames", function() {
             it("Should be able to define frames", function() {
-                const program = `$frame frame1 frame2 frame3`;
-                const actual = parse(program);
-                assert.noErrors(actual);
-            });
-            it("Should be able to define a frame with optional value", function() {
-                const program = `$frame frame1 1.0`;
+                const program = `$frame frame1 frame2 frame3\n$frame frame4 frame5 frame6`;
                 const actual = parse(program);
                 assert.noErrors(actual);
             });
@@ -518,6 +513,15 @@ describe("Parser", function() {
                 const actual = parse(program);
                 assert.noErrors(actual);
             });
+            it("Should handle the $ operator", function() {
+                const program = `
+                $frame frame1
+                void() test = {
+                    float a = $frame1;
+                };`;
+                const actual = parse(program);
+                assert.noErrors(actual);
+            });
         });
         describe("Prefix", function() {
             it("Should handle the ! operator", function() {
@@ -544,24 +548,38 @@ describe("Parser", function() {
                 const actual = parse(program);
                 assert.noErrors(actual);
             });
-            it("Should handle the $ operator", function() {
-                const program = `
-                void() test = {
-                    float a = $frame1;
-                };`;
-                const actual = parse(program);
-                assert.noErrors(actual);
-            });
         });
     });
     describe("Errors", function() {
-        it("Should handle undefined names", function() {
+        it("Should handle undefined function names", function() {
             const program = `
             void() test = {
                 onerror();
             };`;
             const actual = parse(program);
-            assert.noErrors(actual);
+
+            // TODO?
+            assert.equal(actual.errors.length, 1);
+        });
+        it("Should handle undefined variable names", function() {
+            const program = `
+            void() test = {
+                x = 5;
+            };`;
+            const actual = parse(program);
+
+            // TODO?
+            assert.equal(actual.errors.length, 1);
+        });
+        it("Should handle undefined frame macros", function() {
+            const program = `
+            void() test = {
+                local float x = $frame1;
+            };`;
+            const actual = parse(program);
+
+            // TODO?
+            assert.equal(actual.errors.length, 1);
         });
         it("Should create an error for array access", function() {
             const program = `
@@ -629,6 +647,133 @@ describe("Parser", function() {
                     end: {
                         line: 2,
                         character: 37
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a $frame directive spans multiple lines", function() {
+            const program = `$frame frame1 frame2 frame3\nname\n$frame frame4 frame5 frame6`;
+            const actual = parse(program);
+            assert.equal(actual.errors.length, 1);
+
+            const expectedError = {
+                message: "[qcc] Unexpected token: 'name'",
+                range: {
+                    start: {
+                        line: 1,
+                        character: 0
+                    },
+                    end: {
+                        line: 1,
+                        character: 4
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a directive name is used anywhere but at the root", function() {
+            const program = `float $frame = 5;`;
+            const actual = parse(program);
+
+            const expectedError = {
+                message: "[qcc] Expected a new variable name.",
+                range: {
+                    start: {
+                        line: 0,
+                        character: 6
+                    },
+                    end: {
+                        line: 0,
+                        character: 12
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a directive name is used anywhere but at the root", function() {
+            const program = `void() $frame = { };`;
+            const actual = parse(program);
+
+            const expectedError = {
+                message: "[qcc] Expected a new variable name.",
+                range: {
+                    start: {
+                        line: 0,
+                        character: 7
+                    },
+                    end: {
+                        line: 0,
+                        character: 13
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a non-directive $ name is used as a name where it is not supported", function() {
+            const program = `float $frame1 = 5;`;
+            const actual = parse(program);
+
+            const expectedError = {
+                message: "[qcc] Frame macros cannot be used as variable names.",
+                range: {
+                    start: {
+                        line: 0,
+                        character: 6
+                    },
+                    end: {
+                        line: 0,
+                        character: 13
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if a non-directive $ name is used as a name where it is not supported", function() {
+            const program = `void() $frame1 = { };`;
+            const actual = parse(program);
+
+            const expectedError = {
+                message: "[qcc] Frame macros cannot be used as variable names.",
+                range: {
+                    start: {
+                        line: 0,
+                        character: 7
+                    },
+                    end: {
+                        line: 0,
+                        character: 14
+                    }
+                },
+                severity: 1
+            };
+
+            assert.errorsEqual(actual.errors[0], expectedError);
+        });
+        it("Should create an error if $frame is mixed with literals and names", function() {
+            const program = `$frame 1 name`;
+            const actual = parse(program);
+
+            const expectedError = {
+                message: "[qcc] Mixed literals and names in frame definitions are invalid.",
+                range: {
+                    start: {
+                        line: 0,
+                        character: 9
+                    },
+                    end: {
+                        line: 0,
+                        character: 13
                     }
                 },
                 severity: 1
