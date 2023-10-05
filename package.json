@@ -1,10 +1,10 @@
 {
 	"name": "quakec",
 	"displayName": "QuakeC",
-	"description": "A QuakeC Language Extension for VS Code",
+	"description": "QuakeC Intellisense, diagnostics, and code browsing.",
 	"author": "Joshua Skelton",
 	"license": "MIT",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/joshuaskelly/vscode-quakec"
