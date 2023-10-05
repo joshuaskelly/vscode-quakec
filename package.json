@@ -11,6 +11,7 @@
 	},
 	"publisher": "joshuaskelly",
 	"categories": [],
+    "icon": "images/icon.png",
 	"keywords": [],
 	"engines": {
 		"node": "*",

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 135.46666 135.46667"
+   height="512"
+   width="512">
+  <defs
+     id="defs2">
+    <linearGradient
+       id="linearGradient899">
+      <stop
+         id="stop895"
+         offset="0"
+         style="stop-color:#2b230f;stop-opacity:1" />
+      <stop
+         id="stop897"
+         offset="1"
+         style="stop-color:#9f4f33;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient888">
+      <stop
+         id="stop884"
+         offset="0"
+         style="stop-color:#9f4f33;stop-opacity:1;" />
+      <stop
+         id="stop886"
+         offset="1"
+         style="stop-color:#cc8922;stop-opacity:0.9921568" />
+    </linearGradient>
+    <linearGradient
+       y2="-1.298921"
+       x2="48.108513"
+       y1="121.42735"
+       x1="37.545441"
+       gradientTransform="translate(345.38886,98.533976)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1039"
+       xlink:href="#linearGradient899" />
+    <linearGradient
+       y2="50.6366"
+       x2="164.59503"
+       y1="126.24405"
+       x1="60.476189"
+       gradientTransform="translate(345.38886,98.533976)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1041"
+       xlink:href="#linearGradient888" />
+    <linearGradient
+       y2="50.6366"
+       x2="164.59503"
+       y1="126.24405"
+       x1="60.476189"
+       gradientTransform="translate(345.38886,98.533976)"
+       gradientUnits="userSpaceOnUse"
+       id="linearGradient1083"
+       xlink:href="#linearGradient888" />
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1">
+    <g
+       transform="matrix(0.77248003,0,0,0.77248003,-6.9209548,0.81462388)"
+       id="g1081">
+      <g
+         transform="rotate(-72,209.63473,361.1898)"
+         id="g1037">
+        <rect
+           y="123.91239"
+           x="387.93509"
+           height="85.016106"
+           width="111.6179"
+           id="rect1027"
+           style="fill:#2b230f;fill-opacity:1;stroke:#ff0000;stroke-width:0;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+        <path
+           d="m 443.74405,253.33044 -82.75579,-60.12559 31.6099,-97.285272 102.29178,-2e-6 31.6099,97.285264 z"
+           id="path1029"
+           style="opacity:0.997;fill:#2b230f;fill-opacity:1;stroke-width:1.016;paint-order:markers fill stroke" />
+        <path
+           style="opacity:0.997;fill:#9f4f33;fill-opacity:0.233871;stroke-width:1.016;paint-order:markers fill stroke"
+           id="path1031"
+           d="m 443.74405,253.33044 -82.75579,-60.12559 31.6099,-97.285272 102.29178,-2e-6 31.6099,97.285264 z" />
+        <path
+           d="m 443.74405,253.33043 -82.75579,-60.1256 31.6099,-97.285259 z"
+           style="opacity:0.997;fill:url(#linearGradient1039);fill-opacity:1;stroke-width:1.016;paint-order:markers fill stroke"
+           id="path1033" />
+        <path
+           d="m 443.74405,253.33043 -82.75579,-60.1256 133.90167,-97.285261 31.6099,97.285261 z"
+           style="opacity:1;fill:url(#linearGradient1083);fill-opacity:1;stroke-width:1.016;paint-order:markers fill stroke"
+           id="path1035" />
+      </g>
+      <g
+         id="g872-8-2"
+         transform="matrix(1.202376,0,0,1.202376,-19.104403,-2.0272112)">
+        <g
+           id="g866-6-3">
+          <circle
+             style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:10.6212;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             id="path5123-2-0"
+             cx="72.949402"
+             cy="66.11673"
+             r="19.421576" />
+          <path
+             style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:medium;line-height:normal;font-family:sans-serif;font-variant-ligatures:normal;font-variant-position:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-alternates:normal;font-feature-settings:normal;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:normal;word-spacing:normal;text-transform:none;writing-mode:lr-tb;direction:ltr;text-orientation:mixed;dominant-baseline:auto;baseline-shift:baseline;text-anchor:start;white-space:normal;shape-padding:0;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:10.6212;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+             d="M 67.638146,72.255751 V 97.65696 l 5.310548,5.34539 5.310544,-5.34539 V 72.255751 Z"
+             id="path5125-7-3" />
+        </g>
+        <path
+           d="m 140.31127,78.880543 a 19.421576,19.421576 0 0 1 -21.14249,5.529968 19.421576,19.421576 0 0 1 -12.90205,-17.638673 19.421576,19.421576 0 0 1 11.67422,-18.474257 19.421576,19.421576 0 0 1 21.46927,4.081183"
+           style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:10.6212;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+           id="path5123-3-3-4" />
+      </g>
+    </g>
+  </g>
+</svg>
