@@ -30,7 +30,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(float|vector|void|string|entity)\b</string>
+			<string>\b(float|vector|void|string|entity|int)\b</string> <!--braxi: add int-->
 			<key>name</key>
 			<string>storage.type.qc</string>
 		</dict>

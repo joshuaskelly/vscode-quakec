@@ -705,7 +705,7 @@ class Parse {
                 nextToken.error("Unknown operator");
             }
         }
-        else if (arity === "string" || arity === "float" || arity === "vector" || arity === "builtin") {
+        else if (arity === "string" || arity === "float" || arity === "vector" || arity === "builtin" || arity === "int" /*braxi*/) {
             const ff = Context.symbol_table[arity];
 
             arity = "literal";
@@ -1153,11 +1153,13 @@ Define.definition("float");
 Define.definition("vector");
 Define.definition("string");
 Define.definition("entity");
+Define.definition("int"); /*braxi: add int*/
 Define.definition(".void");
 Define.definition(".float");
 Define.definition(".vector");
 Define.definition(".string");
 Define.definition(".entity");
+Define.definition(".int"); /*braxi: add int*/
 
 Define.definition("$frame",
     function() {
@@ -1177,8 +1179,16 @@ Define.definition("$frame",
             Context.scope.define(n, this);
             Parse.advance();
 
-            if (Context.token.arity === "literal" && Context.token.type.value === "float") {
-                Parse.advance();
+            if (Context.token.arity === "literal") {
+
+                if (Context.token.type.value === "float") {
+                    Parse.advance();
+                }
+
+                if (Context.token.type.value === "int") {
+                    /*braxi: add int (in 2nd if to distinguish)*/
+                    Parse.advance();
+                }
             }
         }
     }
